@@ -1,0 +1,60 @@
+---
+title: Architecture
+icon: Network
+description: Components, data flow, and design decisions for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Architecture
+
+High-level view of how the __POC_NAME__ pieces fit together.
+
+## System context
+
+> **TODO (__SE_NAME__)**: Drop in a system context diagram (Mermaid or image). Capture the major systems, who integrates with whom, and the direction of data flow.
+
+```mermaid
+flowchart LR
+  Users["__PERSONAS__"] --> SF["Salesforce (__PRODUCT_AREA__)"]
+  SF <--> Integrations["__INTEGRATIONS__"]
+  SF --> Analytics["Reporting / Data 360"]
+```
+
+## Components
+
+| Component | Responsibility | Notes |
+|-----------|---------------|-------|
+| Salesforce org | System of record for the POC | Sandbox + prod target |
+| __PRODUCT_AREA__ layer | Core POC functionality | See [Agents & Flows](/docs/agents-and-flows) |
+| Integrations | External systems wired in | __INTEGRATIONS__ |
+| Observability | Logs, traces, monitoring | See [Troubleshooting](/docs/troubleshooting) |
+
+## Data flow
+
+1. User action / event originates in **Salesforce** or an integrated system.
+2. __PRODUCT_AREA__ handles the reasoning / orchestration.
+3. Downstream actions hit __INTEGRATIONS__ or update Salesforce records.
+4. State is persisted to the [Data Model](/docs/data-model).
+
+## Design decisions
+
+<Callout type="info" title="Why these choices">
+Document the tradeoffs you made during the POC. Future maintainers (and the account team) will need this context when customer asks "why not X?".
+</Callout>
+
+- **Decision 1** — _what, why, alternatives considered_
+- **Decision 2** — _what, why, alternatives considered_
+- **Decision 3** — _what, why, alternatives considered_
+
+## Out of scope
+
+Explicit non-goals for the POC. Call these out to protect the scope discussion.
+
+- _Example_: Multi-region failover was not in the POC SOW.
+- _Example_: Production-grade security review pending.
+
+## Open questions
+
+- [ ] _Question for the customer architect_
+- [ ] _Question for the integration team_

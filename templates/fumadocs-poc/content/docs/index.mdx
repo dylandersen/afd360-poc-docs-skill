@@ -1,0 +1,74 @@
+---
+title: Overview
+icon: Home
+description: __CUSTOMER_NAME__ — __POC_NAME__ handoff documentation
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Network, Settings, Database, Bot, LifeBuoy, HandshakeIcon, Rocket } from 'lucide-react';
+
+# __POC_NAME__
+
+Welcome to the handoff documentation for the **__POC_NAME__** delivered to **__CUSTOMER_NAME__** by __SE_NAME__.
+
+<Callout type="info" title="What this site is">
+A living reference for the __PRODUCT_AREA__ Proof-of-Concept: how it works, how to operate it, and how to extend it. Share this with your implementation team.
+</Callout>
+
+## At a glance
+
+- **Customer**: __CUSTOMER_NAME__
+- **POC**: __POC_NAME__
+- **Product area**: __PRODUCT_AREA__
+- **Primary personas**: __PERSONAS__
+- **Key integrations**: __INTEGRATIONS__
+- **Deploy target**: __DEPLOY_TARGET__
+
+## Navigate the docs
+
+<Cards>
+  <Card title="Architecture" icon={<Network />} href="/docs/architecture">
+    The components, data flow, and design decisions behind the POC.
+  </Card>
+  <Card title="Setup" icon={<Settings />} href="/docs/setup">
+    Org prereqs, permissions, and step-by-step environment bring-up.
+  </Card>
+  <Card title="Data Model" icon={<Database />} href="/docs/data-model">
+    Objects, fields, relationships, and sample data used by the POC.
+  </Card>
+  <Card title="Agents & Flows" icon={<Bot />} href="/docs/agents-and-flows">
+    Agentforce topics / actions, Flows, and supporting automation.
+  </Card>
+  <Card title="Troubleshooting" icon={<LifeBuoy />} href="/docs/troubleshooting">
+    Common issues, root causes, and fixes we hit during delivery.
+  </Card>
+  <Card title="Handoff" icon={<HandshakeIcon />} href="/docs/handoff">
+    Ownership, operational runbook, and what to do next.
+  </Card>
+</Cards>
+
+## Where to start
+
+<Steps>
+  <Step>
+    **Skim the [Architecture](/docs/architecture)** to understand what was built and why.
+  </Step>
+  <Step>
+    **Walk through [Setup](/docs/setup)** in a sandbox to verify your team can reproduce the deployment.
+  </Step>
+  <Step>
+    **Review the [Data Model](/docs/data-model)** and the [Agents & Flows](/docs/agents-and-flows) that consume it.
+  </Step>
+  <Step>
+    **Bookmark [Troubleshooting](/docs/troubleshooting)** for day-2 operations.
+  </Step>
+  <Step>
+    **Align on ownership** using the [Handoff](/docs/handoff) page.
+  </Step>
+</Steps>
+
+<Callout title="Questions?">
+Reach out to __SE_NAME__. Source for this site lives at [__REPO_URL__](__REPO_URL__).
+</Callout>

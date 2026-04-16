@@ -1,0 +1,81 @@
+---
+title: Handoff
+icon: Handshake
+description: Ownership, operations, and next steps for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+# Handoff
+
+Everything the customer team needs to take ownership of the __POC_NAME__.
+
+## Delivered artifacts
+
+- [ ] Salesforce metadata in `__REPO_URL__`
+- [ ] Sample data set (`data/plan.json`)
+- [ ] This docs site
+- [ ] Agentforce agent(s), topics, actions (if __PRODUCT_AREA__ includes Agentforce)
+- [ ] Data Cloud DLOs / DMOs / segments (if __PRODUCT_AREA__ includes Data 360)
+- [ ] Demo script + recording
+
+## Ownership
+
+| Area | Primary owner | Secondary |
+|------|---------------|-----------|
+| Salesforce metadata | _customer admin_ | _SE on-call_ |
+| Agentforce agents | _customer admin_ | _SE on-call_ |
+| Integrations (__INTEGRATIONS__) | _customer integration lead_ | _vendor support_ |
+| This docs site | _customer team_ | __SE_NAME__ |
+
+## Operational runbook
+
+<Steps>
+  <Step>
+    **Daily** — Review Agentforce session logs for classification misses.
+  </Step>
+  <Step>
+    **Weekly** — Check Flow error emails and `sf apex list log` for errors.
+  </Step>
+  <Step>
+    **Monthly** — Review permissions, Named Credential health, and sample data freshness.
+  </Step>
+  <Step>
+    **Per release** — Re-run `sf agent test run` and smoke-test happy path.
+  </Step>
+</Steps>
+
+## Go / no-go for production
+
+<Callout type="warn" title="Before promoting to production">
+This POC is delivered for evaluation. Complete the items below before promoting.
+</Callout>
+
+- [ ] Security review (profiles, permission sets, sharing rules)
+- [ ] Data volume test (load realistic row counts)
+- [ ] DR plan (backup, restore, sandbox refresh strategy)
+- [ ] Monitoring hooked up (Event Monitoring / Data 360 / external APM)
+- [ ] User training for __PERSONAS__
+- [ ] Change management plan with the customer's CoE
+
+## Roadmap & open items
+
+Things discussed but not in POC scope:
+
+- _Item 1_
+- _Item 2_
+- _Item 3_
+
+## Contacts
+
+| Role | Name | Contact |
+|------|------|---------|
+| Solutions Engineer | __SE_NAME__ | _email / slack_ |
+| Customer architect | _name_ | _contact_ |
+| Customer admin | _name_ | _contact_ |
+| Account Executive | _name_ | _contact_ |
+
+---
+
+Thank you for partnering with us on the __POC_NAME__. Source and future changes live at [__REPO_URL__](__REPO_URL__).

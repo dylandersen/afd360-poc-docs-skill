@@ -1,0 +1,79 @@
+---
+title: Troubleshooting
+icon: LifeBuoy
+description: Common issues and fixes we hit while delivering the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Troubleshooting
+
+Patterns and fixes captured during delivery. Add to this page as the customer team finds new ones.
+
+<Callout type="info" title="How to use this page">
+Each entry is **Symptom → Cause → Fix**. Keep entries short and copy-paste-able so an on-call can resolve fast.
+</Callout>
+
+## Agentforce
+
+### Agent returns "I can't help with that" on a valid request
+
+- **Symptom**: User asks an in-scope question, agent refuses.
+- **Likely cause**: Topic classification description is too narrow, or scope instructions forbid the pattern.
+- **Fix**: Tighten the topic's classification description, broaden scope, and re-run `sf agent test run`.
+
+### Action fails with `INSUFFICIENT_ACCESS`
+
+- **Symptom**: Action errors when invoked, but works for System Admin.
+- **Likely cause**: Permission set missing object/field access, or running user lacks FLS.
+- **Fix**: Grant `__POC_SLUG___User` permset the required object + FLS.
+
+## Deployment
+
+### `sf project deploy start` fails with metadata dependency errors
+
+- **Likely cause**: Dependent metadata (custom objects, permission sets) not deployed in the right order.
+- **Fix**: Deploy with an explicit manifest, or use `sf project deploy start --source-dir` in dependency order.
+
+### Flow test fails post-deploy but passes locally
+
+- **Likely cause**: Running user or org-wide defaults differ.
+- **Fix**: Check `Run as` user on the Flow test and sharing model.
+
+## Data 360
+
+### DLO not ingesting new rows
+
+- **Symptom**: Source has new rows, DLO row count is flat.
+- **Likely cause**: Stream paused, or watermark field misconfigured.
+- **Fix**: Check Data Stream status; validate incremental key.
+
+### Identity Resolution ruleset producing too many unified profiles
+
+- **Likely cause**: Match rule too strict (e.g. exact email match only).
+- **Fix**: Add fuzzy match rules or combine normalization rules.
+
+## Integrations
+
+### Named Credential returns 401 after working yesterday
+
+- **Likely cause**: Token expired, refresh flow not configured.
+- **Fix**: Re-auth Named Credential; enable token refresh on the Auth Provider.
+
+## Docs site
+
+### Search returns no results
+
+- **Cause**: `fumadocs-mdx` post-process output out of sync.
+- **Fix**: `rm -rf .source .next && pnpm build`.
+
+### MDX page 404s after adding a file
+
+- **Cause**: Not listed in `content/docs/meta.json`.
+- **Fix**: Add the slug to `meta.json` `pages` array.
+
+## Escalation path
+
+1. Check this page and the [Setup verify checklist](/docs/setup#verify).
+2. Check the `.source` build output and terminal logs.
+3. Contact __SE_NAME__ / account team.

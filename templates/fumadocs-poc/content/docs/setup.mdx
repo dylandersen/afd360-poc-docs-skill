@@ -1,0 +1,116 @@
+---
+title: Setup
+icon: Settings
+description: Prerequisites and step-by-step bring-up for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+# Setup
+
+How to stand up the __POC_NAME__ in a fresh Salesforce environment.
+
+## Prerequisites
+
+<Callout type="warn" title="Check these first">
+Missing any of these will make the install fail silently.
+</Callout>
+
+- Salesforce org (sandbox or scratch) with __PRODUCT_AREA__ enabled
+- System Administrator access
+- Salesforce CLI (`sf`) v2+ installed locally
+- Node.js 20+
+- Access to: __INTEGRATIONS__
+- Personas provisioned: __PERSONAS__
+
+## Install
+
+<Steps>
+  <Step>
+    **Clone the repo**
+
+    ```bash
+    git clone __REPO_URL__
+    cd __CUSTOMER_SLUG__-__POC_SLUG__
+    ```
+  </Step>
+
+  <Step>
+    **Authenticate to the target org**
+
+    ```bash
+    sf org login web --alias __CUSTOMER_SLUG__-poc
+    ```
+  </Step>
+
+  <Step>
+    **Deploy metadata**
+
+    ```bash
+    sf project deploy start --target-org __CUSTOMER_SLUG__-poc
+    ```
+  </Step>
+
+  <Step>
+    **Assign permission sets** for __PERSONAS__
+
+    ```bash
+    sf org assign permset --name __POC_SLUG___User --target-org __CUSTOMER_SLUG__-poc
+    ```
+  </Step>
+
+  <Step>
+    **Load sample data**
+
+    ```bash
+    sf data tree import --plan data/plan.json --target-org __CUSTOMER_SLUG__-poc
+    ```
+  </Step>
+
+  <Step>
+    **Configure integrations** — __INTEGRATIONS__. See Named Credentials + External Services in the deployed metadata.
+  </Step>
+
+  <Step>
+    **Smoke test** — open the `__POC_NAME__` app in the org and walk the happy-path flow.
+  </Step>
+</Steps>
+
+## Deploy this docs site
+
+<Tabs items={['__DEPLOY_TARGET__', 'Vercel', 'Heroku', 'Static export']}>
+  <Tab value="__DEPLOY_TARGET__">
+    Primary deploy target chosen for this POC: **__DEPLOY_TARGET__**.
+
+    > TODO: fill in the __DEPLOY_TARGET__-specific steps (env vars, domain, CI).
+  </Tab>
+  <Tab value="Vercel">
+    ```bash
+    pnpm install
+    pnpm build
+    vercel deploy
+    ```
+  </Tab>
+  <Tab value="Heroku">
+    ```bash
+    heroku create __CUSTOMER_SLUG__-docs
+    git push heroku main
+    ```
+  </Tab>
+  <Tab value="Static export">
+    ```bash
+    pnpm build
+    # serve the `out/` directory from any static host
+    ```
+  </Tab>
+</Tabs>
+
+## Verify
+
+- [ ] Permission sets assigned to __PERSONAS__
+- [ ] Integrations for __INTEGRATIONS__ authenticated + healthy
+- [ ] Sample records visible in the __POC_NAME__ app
+- [ ] Happy-path test passes end-to-end
+- [ ] Docs site reachable at the customer's internal URL

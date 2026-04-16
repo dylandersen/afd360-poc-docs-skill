@@ -1,0 +1,12 @@
+{
+  "title": "__POC_NAME__",
+  "pages": [
+    "index",
+    "architecture",
+    "setup",
+    "data-model",
+    "agents-and-flows",
+    "troubleshooting",
+    "handoff"
+  ]
+}

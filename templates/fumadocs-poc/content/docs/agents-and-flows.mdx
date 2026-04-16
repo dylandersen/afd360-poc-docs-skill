@@ -1,0 +1,88 @@
+---
+title: Agents & Flows
+icon: Bot
+description: Agentforce topics / actions, Flows, and automations that power the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+# Agents & Flows
+
+The behavior layer of the __POC_NAME__: what makes it actually _do_ things.
+
+## Agentforce
+
+<Callout type="info" title="Scope">
+This section documents the Agentforce agent(s), topics, and actions built for this POC. Skip if __PRODUCT_AREA__ does not include Agentforce.
+</Callout>
+
+### Agent
+
+- **Name**: _Agent display name_
+- **Type**: _Employee / Service / Sales / Custom_
+- **Persona target**: __PERSONAS__
+- **Channel(s)**: _Embedded Chat, Slack, Email-to-Case, etc._
+
+### Topics
+
+| Topic | Classification | Actions |
+|-------|----------------|---------|
+| _Topic 1_ | _description_ | _list actions_ |
+| _Topic 2_ | _description_ | _list actions_ |
+
+For each topic, capture:
+
+- Classification description (routing criteria)
+- Scope (what the agent should / should not do)
+- Instructions (guardrails, tone, constraints)
+- Actions it has access to
+
+### Actions
+
+| Action | Type | Inputs | Outputs |
+|--------|------|--------|---------|
+| _Action 1_ | Apex / Flow / Prompt Template | _..._ | _..._ |
+
+## Flows
+
+| Flow | Type | Trigger | Purpose |
+|------|------|---------|---------|
+| _Flow 1_ | Record-triggered | Case create | _..._ |
+| _Flow 2_ | Screen | Manual | _..._ |
+
+## Apex
+
+List Apex classes that back custom actions, invocable methods, or triggers.
+
+| Class | Role | Tested |
+|-------|------|--------|
+| `__POC_SLUG___Service` | _..._ | _yes / no_ |
+
+## Prompt templates
+
+If the POC uses Prompt Builder templates, document them here.
+
+| Template | Type | Inputs | Notes |
+|----------|------|--------|-------|
+| _Template 1_ | Sales Email / Field / Flex | _..._ | _..._ |
+
+## Example conversations
+
+<Tabs items={['Happy path', 'Edge case', 'Escalation']}>
+  <Tab value="Happy path">
+    _Paste a representative transcript showing the agent working end-to-end._
+  </Tab>
+  <Tab value="Edge case">
+    _Paste a transcript where the agent hits a guardrail and handles it cleanly._
+  </Tab>
+  <Tab value="Escalation">
+    _Paste a transcript where the agent hands off to a human._
+  </Tab>
+</Tabs>
+
+## Test coverage
+
+- [ ] Agentforce Tests (`sf agent test run`) pass
+- [ ] Apex test coverage ≥ 75%
+- [ ] Flow tests for happy + error paths

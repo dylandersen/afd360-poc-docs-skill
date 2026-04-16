@@ -1,0 +1,46 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+html {
+  font-size: 17px;
+}
+
+@media (min-width: 768px) {
+  #nd-docs-layout {
+    --fd-sidebar-width: 280px;
+  }
+}
+
+#nd-sidebar [data-active="true"]::before {
+  content: none !important;
+}
+
+#nd-sidebar div[data-state] a[data-active="true"] {
+  font-weight: 700 !important;
+}
+
+[data-rehype-pretty-code-fragment] pre,
+[data-rehype-pretty-code-fragment] pre code,
+.fd-code-wrap,
+pre,
+pre code {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  overflow-x: visible !important;
+}
+
+[data-rehype-pretty-code-fragment] {
+  overflow-x: visible !important;
+}
+
+p.text-lg.text-fd-muted-foreground {
+  margin-bottom: 1rem !important;
+}
