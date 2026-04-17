@@ -1,51 +1,91 @@
 ---
-name: setup-docs
-description: Scaffolds a tailored Fumadocs documentation site for a Salesforce Solutions Engineer delivering a post-sale Agentforce, Salesforce, or Data 360 Proof-of-Concept. Use when the user runs /setup-docs, asks to "spin up customer docs", "create POC docs site", or "scaffold Fumadocs for a customer". Generates a Next.js + Fumadocs project with sections for Overview, Architecture, Setup, Data Model, Agents & Flows, Troubleshooting, and Handoff, pre-populated with customer and POC details.
+name: afd360-poc-docs-skill
+description: Scaffolds a tailored Fumadocs documentation site for a Salesforce Solutions Engineer delivering a post-sale Agentforce, Salesforce, or Data 360 Proof-of-Concept. Use when the user runs /setup-docs, /update-docs, asks to "spin up customer docs", "create POC docs site", "scaffold Fumadocs for a customer", or "add a section to my POC docs". Generates a Next.js + Fumadocs site with sections for Overview, Architecture, Setup, Data Model, Agents & Flows, Handoff, and Troubleshooting, pre-populated with customer and POC details, and supports incremental updates to existing scaffolded sites.
 ---
 
-# setup-docs — Customer POC Documentation Site
+# afd360-poc-docs-skill — Customer POC Documentation Site
 
-Scaffolds a production-ready [Fumadocs](https://fumadocs.dev) site tailored for an SE handing off a Salesforce / Agentforce / Data 360 Proof-of-Concept to a customer.
+Scaffolds a production-ready [Fumadocs](https://fumadocs.dev) site tailored for an SE handing off a Salesforce / Agentforce / Data 360 Proof-of-Concept to a customer. Also supports incremental updates to an already-scaffolded site.
 
 ## What it produces
 
-A Next.js 16 + Fumadocs 16 site at a directory the SE chooses, with:
+A Next.js + Fumadocs site at a directory the SE chooses, with:
 
 - Opinionated sidebar structure tuned for a POC handoff
-- Pages pre-filled with the customer + POC context (substituted from intake)
-- Static client-side search (Orama), llms-full.txt, OG image route
-- `pnpm` workflow, Tailwind v4, TypeScript strict
+- Pages pre-filled with customer + POC context and **starter content** (real tables, Mermaid diagrams, example callouts) the SE can edit in place
+- A single `site.config.ts` file that centralizes every knob an SE typically wants to change (title, colors, personas, integrations, repo URL)
+- Static client-side search (Orama), `llms-full.txt`, OG image route
+- Tailwind v4, TypeScript strict, works with `pnpm` (preferred), `npm`, or `bun`
+
+The template tracks **Fumadocs 16+** and requires **Node 22+**. The template's `package.json` is the source of truth for versions — do not hardcode versions anywhere in this skill's prose.
+
+> **Status:** The specification in this file is stable, but the implementing artifacts (`scripts/preflight.mjs`, `scripts/scaffold.mjs`, `scripts/verify-placeholders.mjs`, and `templates/fumadocs-poc/`) are not yet checked in. Until they land, `/setup-docs` and `/update-docs` will fail at Phase 0. Build order: template → scaffold.mjs → verify-placeholders.mjs → preflight.mjs.
 
 ## Invocation
 
 Triggered by:
 
-- `/setup-docs` slash command
-- Natural phrases: "spin up customer docs", "scaffold POC docs", "create docs site for \<customer\>"
+- `/setup-docs` — scaffold a new site (default)
+- `/update-docs` — add or update sections in an existing scaffolded site
+- Natural phrases: "spin up customer docs", "scaffold POC docs", "create docs site for \<customer\>", "add a \<section\> page to my POC docs"
 
 ## Workflow
 
-Follow these phases **in order**. Do not skip intake — the template relies on every placeholder.
+Follow these phases **in order**. Phase 0 is non-negotiable — it catches 90% of "why didn't it work" issues before the SE has invested any time.
+
+### Phase 0 — Preflight (always run first)
+
+Run `scripts/preflight.mjs`. It checks, in order:
+
+1. Node version ≥ 22 (Fumadocs 16 minimum)
+2. A package manager is available (`pnpm` preferred, `npm` fallback, `bun` acceptable)
+3. `git` is on PATH (needed for Phase 4's `git init`)
+4. Network reachability to the npm registry (`https://registry.npmjs.org`)
+
+If anything fails, **stop and print the exact install command** for the SE's platform. Do not proceed to intake. Example output:
+
+```
+✗ Node 20.11.0 detected. Fumadocs 16 requires Node 22+.
+  Install via: brew install node@22   (macOS)
+               nvm install 22          (any platform with nvm)
+```
 
 ### Phase 1 — Intake
 
-Use the AskQuestion tool if available, otherwise ask conversationally. Collect:
+**Required fields (4):**
 
-1. **Customer name** — display name, e.g. "Acme Corp"
+1. **Customer name** — e.g. "Acme Corp"
 2. **POC name** — e.g. "Service Cloud Agent POC"
 3. **Product area** — one of: `Agentforce`, `Data 360`, `Agentforce + Data 360`, `Salesforce Platform`
-4. **Primary personas** — comma-separated, e.g. "Service Agent, Supervisor, Admin"
-5. **Key integrations** — comma-separated, e.g. "ServiceNow, Snowflake, Slack"
-6. **Deploy target** — one of: `Vercel`, `Heroku`, `Static export`, `Not decided`
-7. **Repo URL** — target GitHub URL, or `skip` to leave blank
-8. **SE name** — the Solutions Engineer's name (for the handoff page)
-9. **Target directory** — absolute path where the site should be created. If the SE doesn't specify, default to `~/Documents/cursor_orgs/<customer-slug>-docs` and confirm.
+4. **Target directory** — absolute path. Default: `~/Documents/cursor_orgs/<customer-slug>-docs`
 
-Derive slugs from the names (lowercase, hyphenated, no special chars). Confirm all values back to the SE before scaffolding.
+**Optional fields (fill in after scaffold by editing `site.config.ts`):**
+
+5. Primary personas — defaults to `Admin, End User`
+6. Key integrations — defaults to `None`
+7. Deploy target — defaults to `Not decided`
+8. Repo URL — defaults to empty
+9. SE name — defaults to the OS user (`os.userInfo().username`)
+
+Ask for the 4 required fields one at a time. **Do not ask optional fields unless the SE volunteers them.** At the end, offer: "I've got what I need. Want to set personas / integrations / deploy target / repo / your name now, or fill those in later via `site.config.ts`?"
+
+Derive slugs from names: lowercase, hyphenate, strip punctuation. Confirm all values back in one compact summary before scaffolding.
+
+Speak directly to the SE in second person. Keep the tone conversational.
+
+#### Intake anti-duplication rules
+
+- Ask only for the next unanswered required field.
+- Never repeat the same prompt text after the user answers.
+- Never restate the user's previous answer in the same message as the next question.
+- If a field is already known from context (e.g., SE mentioned "Acme" in their first message), skip it and confirm it in the summary.
+- Keep acknowledgments short: "Got it." Then ask the next question.
+- If the current tool interface supports single-question prompts (like `AskQuestion`), submit one at a time — never a multi-field form.
+- Do not echo the full summary until every required field is collected.
 
 ### Phase 2 — Scaffold
 
-Run the Node scaffold script. It copies `templates/fumadocs-poc/` → target directory and substitutes every placeholder token.
+Call the Node scaffold script. Never re-implement copy/substitute logic inline.
 
 ```bash
 node "<skill-dir>/scripts/scaffold.mjs" \
@@ -55,75 +95,138 @@ node "<skill-dir>/scripts/scaffold.mjs" \
   --poc "<POC_NAME>" \
   --poc-slug "<POC_SLUG>" \
   --product-area "<PRODUCT_AREA>" \
-  --personas "<PERSONAS>" \
-  --integrations "<INTEGRATIONS>" \
-  --deploy-target "<DEPLOY_TARGET>" \
+  --personas "<PERSONAS_OR_DEFAULT>" \
+  --integrations "<INTEGRATIONS_OR_DEFAULT>" \
+  --deploy-targets "<COMMA_SEPARATED_DEPLOY_TARGETS_OR_DEFAULT>" \
   --repo-url "<REPO_URL_OR_EMPTY>" \
-  --se-name "<SE_NAME>"
+  --se-name "<SE_NAME_OR_OS_USER>"
 ```
 
-`<skill-dir>` is the skill's installation path (e.g. `~/.cursor/skills/setup-docs`). Resolve it from the absolute path of this `SKILL.md` file.
+Resolve `<skill-dir>` from the absolute path of this `SKILL.md` file.
 
-**Never** re-implement the copy/substitute logic inline — always call `scripts/scaffold.mjs`. It handles: directory creation, recursive copy, placeholder replacement across all text files, `.gitignore` generation, and idempotent re-runs.
+The scaffold script handles: directory creation, recursive copy, placeholder replacement across all text files, `.gitignore` generation, `site.config.ts` generation, and idempotent re-runs. It also derives `__DEPLOY_TARGET_PRIMARY__` (first item in `--deploy-targets`) and the `__INCLUDE_*__` booleans from `--product-area` before substitution.
 
-### Phase 3 — Install & verify
+**After the script returns, run `scripts/verify-placeholders.mjs <target>`.** It scans the target for any leftover `__*__` tokens. If any remain, fail loudly — this means a template file was added without updating the REPLACEMENTS map.
 
-After scaffold succeeds:
+### Phase 3 — Install & smoke test
 
 1. `cd` to the target directory.
-2. Run `pnpm install` (the script does NOT run install automatically — ask the SE first; some prefer `npm` or want to inspect first).
-3. Run `pnpm dev` in the background and confirm the site boots on `http://localhost:3000`.
-4. Print a short summary: target path, dev URL, key pages to edit next, suggested git init steps.
+2. Ask once: "Install dependencies now? (recommended) [Y/n]". If yes, run `pnpm install` (or `npm install` / `bun install` based on what preflight found).
+3. **Run `pnpm build` as a smoke test.** If build fails, print the first error and a note: "This is likely a template bug, not your fault. Please report to \<your team's skill maintainer\> with this error."
+4. Start `pnpm dev` in the background and confirm `http://localhost:3000` responds.
+5. Print a short summary: target path, dev URL, the 3 files the SE will edit first (`site.config.ts`, `content/docs/index.mdx`, `content/docs/architecture.mdx`), and suggested `git init` steps.
 
-If `pnpm` is not installed, fall back to `npm install` and `npm run dev`. Warn the SE that the template uses `pnpm` lockfile conventions.
+### Phase 4 — Next steps
 
-### Phase 4 — Next steps message
+End with a checklist the SE can hand to the customer:
 
-End with a checklist the SE can hand to the customer team, including:
-
-- Where to edit each section (`content/docs/*.mdx`)
-- How to add new pages (update `meta.json`, drop `.mdx` file)
+- Where to edit each section (link `content/docs/*.mdx` paths)
+- How to add new pages (update `meta.json`, drop `.mdx`)
+- How to tune theme/title/personas (edit `site.config.ts` — one file, not ten)
 - How to swap the logo (`public/logo.png`)
-- How to deploy to the chosen target
+- How to deploy to the chosen target (or `/setup-docs deploy` in a future version)
+- How to invoke `/update-docs` later to add sections
+
+## `/update-docs` — incremental updates
+
+Invoked when the SE already has a scaffolded site and wants to add or refresh a section.
+
+**Required fields (2):**
+
+1. Target directory (absolute path to existing scaffolded site)
+2. Action — one of:
+   - `add-section <slug>` — drop a new `.mdx` from the section library and update `meta.json`
+   - `refresh-starter <slug>` — re-copy the starter content into an existing section (destructive; warns before overwrite)
+   - `resync-config` — regenerate `site.config.ts` from intake (interactive)
+
+The section library lives at `templates/fumadocs-poc/content/docs/_sections/`. `/update-docs` copies a single file, runs placeholder substitution, and appends the slug to `meta.json`. It does **not** touch unrelated files.
+
+**Available sections** (canonical list — keep in sync with the library on disk):
+
+| Slug | Purpose |
+|------|---------|
+| `security` | Threat model, sharing rules, secrets handling, perm audit |
+| `observability` | Logging, monitoring, alerting, agent transcript review |
+| `rollout-plan` | Phased rollout, comms plan, training, success metrics |
+| `faq` | Customer-facing frequently asked questions |
+| `glossary` | Acronyms and terms specific to this POC |
+| `release-notes` | Ongoing change log post-handoff |
+| `runbook` | Standalone operational runbook (when `handoff.mdx` gets too long) |
+
+To discover what's actually on disk at runtime, run `node scripts/scaffold.mjs --list-sections`. The table above is authoritative for the skill's prose; the script is authoritative for the filesystem. If they disagree, update whichever is wrong.
 
 ## Placeholder contract
 
-The template files contain these tokens (all literal, uppercase, double-underscored). The scaffold script replaces them everywhere:
+All template files contain these literal, uppercase, double-underscored tokens. `scripts/scaffold.mjs` replaces them everywhere.
 
-| Token | Source |
-|-------|--------|
-| `__CUSTOMER_NAME__` | Customer display name |
-| `__CUSTOMER_SLUG__` | Lowercased, hyphenated customer name |
-| `__POC_NAME__` | POC display name |
-| `__POC_SLUG__` | Lowercased, hyphenated POC name |
-| `__PRODUCT_AREA__` | Product area string |
-| `__PERSONAS__` | Comma-separated personas |
-| `__INTEGRATIONS__` | Comma-separated integrations |
-| `__DEPLOY_TARGET__` | Deploy target string |
-| `__REPO_URL__` | Git remote URL (empty allowed) |
-| `__SE_NAME__` | SE display name |
-| `__YEAR__` | Current calendar year (auto from script) |
+| Token | Source | Default if missing |
+|-------|--------|--------------------|
+| `__CUSTOMER_NAME__` | Customer display name | *(required)* |
+| `__CUSTOMER_SLUG__` | Lowercased, hyphenated customer name | *(derived)* |
+| `__POC_NAME__` | POC display name | *(required)* |
+| `__POC_SLUG__` | Lowercased, hyphenated POC name | *(derived)* |
+| `__PRODUCT_AREA__` | Product area string | *(required)* |
+| `__INCLUDE_DATA_CLOUD__` | `true` if `__PRODUCT_AREA__` contains `Data 360`, else `false` | *(derived)* |
+| `__INCLUDE_AGENTFORCE__` | `true` if `__PRODUCT_AREA__` contains `Agentforce`, else `false` | *(derived)* |
+| `__DEPLOY_TARGET_PRIMARY__` | First value from deploy-target list | `Not decided` |
+| `__DEPLOY_TARGETS__` | Full comma-separated deploy-target list | `Not decided` |
+| `__PERSONAS__` | Comma-separated personas | `Admin, End User` |
+| `__INTEGRATIONS__` | Comma-separated integrations | `None` |
+| `__REPO_URL__` | Git remote URL | *(empty)* |
+| `__SE_NAME__` | SE display name | OS username |
+| `__YEAR__` | Current calendar year | Auto from script |
 
-If you need to add a new placeholder later, add it to `scripts/scaffold.mjs` `REPLACEMENTS` map and document it here.
+### Conditional rendering contract
+
+Starter MDX uses the boolean `__INCLUDE_DATA_CLOUD__` / `__INCLUDE_AGENTFORCE__` tokens to gate product-specific content (e.g., the Data Cloud mapping table in `data-model.mdx` only renders when Data 360 is in scope). The scaffolder emits these as literal `true` / `false` into a generated `site.config.ts` export; MDX reads them via a `<ProductArea>` helper component shipped with the template. **Do not** do string-matching on `__PRODUCT_AREA__` in MDX — always branch on the booleans so typos in the product-area label don't silently disable sections.
+
+To add a new placeholder: update `scripts/scaffold.mjs` `REPLACEMENTS` map, update this table, update `scripts/verify-placeholders.mjs` allowlist.
 
 ## Idempotency & safety
 
-- The scaffold script **refuses** to write into a non-empty directory unless `--force` is passed. Confirm with the SE before passing `--force`.
-- Never run `rm -rf`. Let the script handle it.
-- Never commit secrets. The template ships no `.env` files.
+- `scripts/scaffold.mjs` refuses to write into a non-empty directory unless `--force` is passed. Always confirm with the SE before passing `--force`.
+- `scripts/scaffold.mjs` never runs `rm -rf`. The script handles collisions by refusing, not by deleting.
+- The template ships **no** `.env` files and no secrets. If an SE asks you to add credentials to the template, decline and point them at `site.config.ts` + runtime env vars.
+
+## Common customizations (recipes)
+
+Paste these verbatim when an SE asks "how do I…":
+
+**Change the logo:**
+Replace `public/logo.png` with a 512×512 PNG. Fumadocs picks it up automatically.
+
+**Change the primary color:**
+Edit `site.config.ts`, update the `theme.primary` hex. One variable, propagates to sidebar / buttons / links.
+
+**Add a new top-level section called "Security":**
+```
+/update-docs add-section security
+```
+This drops `content/docs/security.mdx`, adds `"security"` to `content/docs/meta.json`, and runs placeholder substitution.
+
+**Switch from Vercel to static export:**
+Edit `next.config.mjs`, set `output: 'export'`. Run `pnpm build`. Deploy the `out/` directory anywhere.
 
 ## Extending the template
 
-To modify what every future scaffolded site looks like, edit files under `templates/fumadocs-poc/`. Keep placeholder tokens literal. Run a dry-run scaffold into `/tmp/foo` after edits to verify.
+- To change what every future site looks like, edit `templates/fumadocs-poc/`.
+- Keep placeholder tokens literal.
+- After edits, dry-run: `node scripts/scaffold.mjs --target /tmp/dry-run-$(date +%s) --customer Test --poc Test --product-area Agentforce`, then run `pnpm build` in that directory. If build fails, your template change broke something.
 
 ## Reference files
 
-- [`reference/intake.md`](reference/intake.md) — suggested intake question wording + example answers
-- [`reference/content-guide.md`](reference/content-guide.md) — what belongs in each POC section
+- [`reference/intake.md`](reference/intake.md) — prompt wording + example answers
+- [`reference/content-guide.md`](reference/content-guide.md) — what belongs in each POC section (for the SE, not for scaffold)
+- [`reference/handoff-checklist.md`](reference/handoff-checklist.md) — what "done" looks like for a POC handoff
+- [`scripts/preflight.mjs`](scripts/preflight.mjs) — environment check
 - [`scripts/scaffold.mjs`](scripts/scaffold.mjs) — the one and only scaffolder
+- [`scripts/verify-placeholders.mjs`](scripts/verify-placeholders.mjs) — post-scaffold sanity check
 
 ## Anti-patterns
 
-- Don't generate MDX content inline inside the chat and write it file-by-file. Use the template.
-- Don't hardcode customer values into template files during scaffold — always go through placeholders.
-- Don't skip the intake phase "to save time". The template's defaults are intentionally generic and read poorly without substitution.
+- Don't generate MDX content inline in chat and write files one-by-one. Use the template.
+- Don't hardcode customer values into template files. Always go through placeholders.
+- Don't skip Phase 0. A broken Node install will eat 15 minutes of an SE's day otherwise.
+- Don't skip the smoke test in Phase 3. A template that scaffolds but doesn't build is worse than no template.
+- Don't pin `Node.js 16` / `Fumadocs 16` in prose anywhere. Cite minimums (`Node 22+`, `Fumadocs 16+`) and let `package.json` be canonical.
+- Don't ask the SE all 9 intake fields up front. Four required, the rest deferred to `site.config.ts`.

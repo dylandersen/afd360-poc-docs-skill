@@ -25,8 +25,8 @@ content/docs/
 ├── setup.mdx            Prereqs + install
 ├── data-model.mdx       Objects, fields, relationships
 ├── agents-and-flows.mdx Agentforce topics / Flows / automations
-├── troubleshooting.mdx  Common issues + fixes
-└── handoff.mdx          Ownership, ops, next steps
+├── handoff.mdx          Ownership, ops, next steps
+└── troubleshooting.mdx  Common issues + fixes (lives last so it's easy to find)
 ```
 
 ## Editing content

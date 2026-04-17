@@ -1,79 +1,213 @@
 ---
 title: Troubleshooting
 icon: LifeBuoy
-description: Common issues and fixes we hit while delivering the __POC_NAME__
+description: Common issues, root causes, and fixes for the __POC_NAME__
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { FileText, Activity, ShieldAlert } from 'lucide-react';
 
 # Troubleshooting
 
-Patterns and fixes captured during delivery. Add to this page as the customer team finds new ones.
+{/* TODO(SE): Replace the boilerplate below with real issues captured during delivery.
+    Every entry should follow: Symptom -> Likely cause -> Fix -> (optional) Verify.
+    Group by product area. Keep entries short and copy-paste-able so a tier-1 admin
+    can unblock themselves without paging you at 2am. */}
+
+Patterns and fixes captured during delivery of the **__POC_NAME__**. Add to this page
+as the __CUSTOMER_NAME__ team uncovers new ones — this page is designed to grow.
 
 <Callout type="info" title="How to use this page">
-Each entry is **Symptom → Cause → Fix**. Keep entries short and copy-paste-able so an on-call can resolve fast.
+Each entry is **Symptom → Likely cause → Fix**. If a fix requires more than five
+steps, link out to a standalone runbook instead of inlining it here.
 </Callout>
 
-## Agentforce
+## Quick links
 
-### Agent returns "I can't help with that" on a valid request
+<Cards>
+  <Card title="Setup Verify" icon={<FileText />} href="/docs/setup#verify">
+    Re-run the post-install smoke test before deep-diving.
+  </Card>
+  <Card title="Agents & Flows" icon={<Activity />} href="/docs/agents-and-flows">
+    Topic, action, and flow inventory for cross-referencing errors.
+  </Card>
+  <Card title="Escalation" icon={<ShieldAlert />} href="#escalation-path">
+    When to stop debugging and page __SE_NAME__.
+  </Card>
+</Cards>
 
-- **Symptom**: User asks an in-scope question, agent refuses.
-- **Likely cause**: Topic classification description is too narrow, or scope instructions forbid the pattern.
-- **Fix**: Tighten the topic's classification description, broaden scope, and re-run `sf agent test run`.
+## Before you debug
 
-### Action fails with `INSUFFICIENT_ACCESS`
+<Callout type="warn" title="Capture evidence first">
+Before changing anything, grab: the failing request ID, the running user, the time
+window, and the full error. Most of the fixes below assume you already have these.
+</Callout>
 
-- **Symptom**: Action errors when invoked, but works for System Admin.
-- **Likely cause**: Permission set missing object/field access, or running user lacks FLS.
-- **Fix**: Grant `__POC_SLUG___User` permset the required object + FLS.
+<Steps>
+  <Step>
+    **Reproduce the issue** in a sandbox if possible. A fix that can't be reproduced
+    is a guess.
+  </Step>
+  <Step>
+    **Check the obvious first** — is the user licensed? Is the permset assigned?
+    Is the Named Credential active? Governor limits are suspect only after these.
+  </Step>
+  <Step>
+    **Search this page** before opening a ticket. If the symptom isn't listed,
+    add it once you solve it so the next person benefits.
+  </Step>
+</Steps>
 
-## Deployment
+## Common issues
 
-### `sf project deploy start` fails with metadata dependency errors
+<Tabs items={['Agentforce', 'Deployment', 'Data 360', 'Integrations', 'Docs site']}>
 
-- **Likely cause**: Dependent metadata (custom objects, permission sets) not deployed in the right order.
-- **Fix**: Deploy with an explicit manifest, or use `sf project deploy start --source-dir` in dependency order.
+<Tab value="Agentforce">
 
-### Flow test fails post-deploy but passes locally
+{/* TODO(SE): Remove this tab entirely if __PRODUCT_AREA__ does not include Agentforce. */}
 
-- **Likely cause**: Running user or org-wide defaults differ.
-- **Fix**: Check `Run as` user on the Flow test and sharing model.
+<Accordions type="single">
+  <Accordion id="agent-refuses" title='Agent returns "I can\'t help with that" on a valid request'>
+    - **Symptom**: User asks an in-scope question; agent refuses or deflects.
+    - **Likely cause**: Topic classification description is too narrow, or scope
+      instructions forbid the pattern.
+    - **Fix**: Broaden the topic's classification description, loosen the scope,
+      re-run `sf agent test run`, and confirm with a representative prompt set.
+  </Accordion>
+  <Accordion id="action-insufficient-access" title="Action fails with INSUFFICIENT_ACCESS">
+    - **Symptom**: Custom action errors when invoked, but works for System Admin.
+    - **Likely cause**: Permission set missing object or field-level access,
+      or the running user lacks FLS on a referenced field.
+    - **Fix**: Grant the `__POC_SLUG___User` permset the required object + FLS.
+      Re-run the action as the affected persona.
+  </Accordion>
+  <Accordion id="agent-slow" title="Agent responses are slow or time out">
+    - **Symptom**: Responses take >30s, or the transcript shows a timeout.
+    - **Likely cause**: An action is making an uncached external callout,
+      or the retrieval step is over-fetching.
+    - **Fix**: Add caching to the action's callout, or narrow the retrieval
+      scope. Check Event Monitoring for callout duration.
+  </Accordion>
+</Accordions>
 
-## Data 360
+</Tab>
 
-### DLO not ingesting new rows
+<Tab value="Deployment">
 
-- **Symptom**: Source has new rows, DLO row count is flat.
-- **Likely cause**: Stream paused, or watermark field misconfigured.
-- **Fix**: Check Data Stream status; validate incremental key.
+<Accordions type="single">
+  <Accordion id="deploy-dep-order" title="sf project deploy start fails with metadata dependency errors">
+    - **Likely cause**: Dependent metadata (custom objects, permsets, flows)
+      not deployed in the right order.
+    - **Fix**: Deploy with an explicit manifest, or chain `sf project deploy start --source-dir`
+      calls in dependency order (objects → fields → permsets → flows → agents).
+  </Accordion>
+  <Accordion id="flow-passes-locally" title="Flow test fails post-deploy but passes locally">
+    - **Likely cause**: Running user, org-wide defaults, or sharing rules
+      differ between sandbox and the target org.
+    - **Fix**: Set the `Run as` user on the Flow test explicitly and confirm
+      the sharing model matches production.
+  </Accordion>
+</Accordions>
 
-### Identity Resolution ruleset producing too many unified profiles
+</Tab>
 
-- **Likely cause**: Match rule too strict (e.g. exact email match only).
-- **Fix**: Add fuzzy match rules or combine normalization rules.
+<Tab value="Data 360">
 
-## Integrations
+{/* TODO(SE): Remove this tab entirely if __PRODUCT_AREA__ does not include Data 360. */}
 
-### Named Credential returns 401 after working yesterday
+<Accordions type="single">
+  <Accordion id="dlo-flat" title="DLO not ingesting new rows">
+    - **Symptom**: Source has new rows; DLO row count is flat.
+    - **Likely cause**: Data Stream paused, or the watermark / incremental key
+      is misconfigured.
+    - **Fix**: Check Data Stream status in the Data Cloud app, validate the
+      incremental key column, and re-run the stream manually once.
+  </Accordion>
+  <Accordion id="ir-over-matching" title="Identity Resolution ruleset produces too many unified profiles">
+    - **Likely cause**: Match rule is too strict (e.g. exact email match only).
+    - **Fix**: Layer fuzzy match rules, add normalization (lowercase, trim),
+      and re-run the ruleset on a sample before promoting.
+  </Accordion>
+</Accordions>
 
-- **Likely cause**: Token expired, refresh flow not configured.
-- **Fix**: Re-auth Named Credential; enable token refresh on the Auth Provider.
+</Tab>
 
-## Docs site
+<Tab value="Integrations">
 
-### Search returns no results
+<Accordions type="single">
+  <Accordion id="nc-401" title="Named Credential returns 401 after working yesterday">
+    - **Likely cause**: Token expired, and token refresh is not configured on
+      the Auth Provider.
+    - **Fix**: Re-auth the Named Credential. Enable token refresh on the
+      Auth Provider so this self-heals next time.
+  </Accordion>
+  <Accordion id="pe-not-firing" title="Platform Event subscriber not firing">
+    - **Likely cause**: Subscriber user lacks CDC or Platform Event permissions,
+      or the replay ID is stuck.
+    - **Fix**: Verify permset assignment and reset the replay position if
+      using a durable subscriber.
+  </Accordion>
+</Accordions>
 
-- **Cause**: `fumadocs-mdx` post-process output out of sync.
-- **Fix**: `rm -rf .source .next && pnpm build`.
+</Tab>
 
-### MDX page 404s after adding a file
+<Tab value="Docs site">
 
-- **Cause**: Not listed in `content/docs/meta.json`.
-- **Fix**: Add the slug to `meta.json` `pages` array.
+<Accordions type="single">
+  <Accordion id="search-empty" title="Search returns no results">
+    - **Cause**: `fumadocs-mdx` post-process output is out of sync with content.
+    - **Fix**: `rm -rf .source .next && pnpm build` then reload.
+  </Accordion>
+  <Accordion id="page-404" title="MDX page 404s after adding a file">
+    - **Cause**: New page is not listed in `content/docs/meta.json`.
+    - **Fix**: Add the slug to the `pages` array in `meta.json` and restart dev.
+  </Accordion>
+</Accordions>
+
+</Tab>
+
+</Tabs>
+
+## Known gotchas
+
+<Callout type="error" title="Never debug in production first">
+If an incident is live, roll back before debugging. Use the change-set history
+in the target org to revert the most recent deployment.
+</Callout>
+
+- __PRODUCT_AREA__ features behind feature flags may be disabled post-sandbox-refresh.
+- Named Credentials are **not** copied during a sandbox refresh; re-auth after every refresh.
+- Permsets assigned to users are wiped during a full-copy sandbox refresh.
+
+{/* TODO(SE): Add customer-specific gotchas here — anything you personally tripped on
+    during the build is a gotcha the customer will hit too. */}
 
 ## Escalation path
 
-1. Check this page and the [Setup verify checklist](/docs/setup#verify).
-2. Check the `.source` build output and terminal logs.
-3. Contact __SE_NAME__ / account team.
+<Steps>
+  <Step>
+    **Check this page** and the [Setup verify checklist](/docs/setup#verify).
+  </Step>
+  <Step>
+    **Check build + runtime logs** — terminal output for docs, `sf apex list log`
+    for the org, and Event Monitoring for orgs on Enterprise+.
+  </Step>
+  <Step>
+    **Search the customer's internal knowledge base** for similar symptoms
+    before opening a ticket.
+  </Step>
+  <Step>
+    **Contact __SE_NAME__** or the __CUSTOMER_NAME__ account team with the
+    evidence captured above. Include the request ID, running user, time window,
+    and a minimal reproduction.
+  </Step>
+</Steps>
+
+<Callout title="Keep this page alive">
+Every incident the team resolves should leave a trace here. The value of this
+page compounds — three entries is a stub, thirty entries is a runbook.
+</Callout>

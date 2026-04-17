@@ -48,12 +48,12 @@ function slugify(s) {
 }
 
 function die(msg, code = 1) {
-  console.error(`\n[setup-docs] error: ${msg}\n`);
+  console.error(`\n[afd360-poc-docs-skill] error: ${msg}\n`);
   process.exit(code);
 }
 
 function info(msg) {
-  console.log(`[setup-docs] ${msg}`);
+  console.log(`[afd360-poc-docs-skill] ${msg}`);
 }
 
 function walk(dir, cb, rel = "") {
