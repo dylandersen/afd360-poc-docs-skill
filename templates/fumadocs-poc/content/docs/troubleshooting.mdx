@@ -11,8 +11,6 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 import { FileText, Activity, ShieldAlert } from 'lucide-react';
 
-# Troubleshooting
-
 {/* TODO(SE): Replace the boilerplate below with real issues captured during delivery.
     Every entry should follow: Symptom -> Likely cause -> Fix -> (optional) Verify.
     Group by product area. Keep entries short and copy-paste-able so a tier-1 admin
@@ -71,7 +69,7 @@ window, and the full error. Most of the fixes below assume you already have thes
 {/* TODO(SE): Remove this tab entirely if __PRODUCT_AREA__ does not include Agentforce. */}
 
 <Accordions type="single">
-  <Accordion id="agent-refuses" title='Agent returns "I can\'t help with that" on a valid request'>
+  <Accordion id="agent-refuses" title={`Agent returns "I can't help with that" on a valid request`}>
     - **Symptom**: User asks an in-scope question; agent refuses or deflects.
     - **Likely cause**: Topic classification description is too narrow, or scope
       instructions forbid the pattern.

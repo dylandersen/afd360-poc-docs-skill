@@ -6,21 +6,23 @@ description: Objects, fields, and relationships used by the __POC_NAME__
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-# Data Model
-
 The shape of the data that powers the __POC_NAME__.
 
 ## Entity overview
 
-```mermaid
-erDiagram
-  Account ||--o{ Contact : has
-  Account ||--o{ Case : has
-  Case ||--o{ Interaction : generates
-  Interaction ||--|| Agent : handled_by
+```text
+┌───────────┐  1   *  ┌───────────┐
+│  Account  │─────────│  Contact  │
+└─────┬─────┘         └───────────┘
+      │ 1
+      │
+      │ *
+┌─────┴─────┐  1   *  ┌──────────────┐  1   1  ┌────────┐
+│   Case    │─────────│  Interaction │─────────│ Agent  │
+└───────────┘         └──────────────┘         └────────┘
 ```
 
-> **TODO (__SE_NAME__)**: Replace with the actual ERD. Include custom objects and key lookups used by Agentforce topics / Flows.
+> **TODO (__SE_NAME__)**: Replace with the actual ERD. Include custom objects and key lookups used by Agentforce topics / Flows. Mermaid is intentionally not used here — drop a PNG/SVG into `public/` and reference it with a standard image tag if you want a richer diagram.
 
 ## Objects
 

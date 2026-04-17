@@ -6,19 +6,28 @@ description: Components, data flow, and design decisions for the __POC_NAME__
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-# Architecture
-
 High-level view of how the __POC_NAME__ pieces fit together.
 
 ## System context
 
-> **TODO (__SE_NAME__)**: Drop in a system context diagram (Mermaid or image). Capture the major systems, who integrates with whom, and the direction of data flow.
+> **TODO (__SE_NAME__)**: Replace the ASCII sketch below with a real diagram (PNG/SVG dropped into `public/` or an image rendering service). Capture the major systems, who integrates with whom, and the direction of data flow.
 
-```mermaid
-flowchart LR
-  Users["__PERSONAS__"] --> SF["Salesforce (__PRODUCT_AREA__)"]
-  SF <--> Integrations["__INTEGRATIONS__"]
-  SF --> Analytics["Reporting / Data 360"]
+```text
+         ┌──────────────────────┐
+         │  __PERSONAS__        │
+         │  (end users / admin) │
+         └──────────┬───────────┘
+                    │
+                    ▼
+         ┌──────────────────────┐          ┌──────────────────────┐
+         │  Salesforce          │ ───────▶ │  __INTEGRATIONS__    │
+         │  (__PRODUCT_AREA__)  │ ◀─────── │  (external systems)  │
+         └──────────┬───────────┘          └──────────────────────┘
+                    │
+                    ▼
+         ┌──────────────────────┐
+         │  Reporting / Data360 │
+         └──────────────────────┘
 ```
 
 ## Components

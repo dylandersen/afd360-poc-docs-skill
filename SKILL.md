@@ -12,7 +12,7 @@ Scaffolds a production-ready [Fumadocs](https://fumadocs.dev) site tailored for 
 A Next.js + Fumadocs site at a directory the SE chooses, with:
 
 - Opinionated sidebar structure tuned for a POC handoff
-- Pages pre-filled with customer + POC context and **starter content** (real tables, Mermaid diagrams, example callouts) the SE can edit in place
+- Pages pre-filled with customer + POC context and **starter content** (real tables, ASCII system/ERD sketches, example callouts) the SE can edit in place. Mermaid is intentionally **not** used in starter content because Fumadocs ships without a Mermaid renderer — SEs should drop a PNG/SVG into `public/` if they want a richer diagram.
 - A single `site.config.ts` file that centralizes every knob an SE typically wants to change (title, colors, personas, integrations, repo URL)
 - Static client-side search (Orama), `llms-full.txt`, OG image route
 - Tailwind v4, TypeScript strict, works with `pnpm` (preferred), `npm`, or `bun`
@@ -230,3 +230,6 @@ Edit `next.config.mjs`, set `output: 'export'`. Run `pnpm build`. Deploy the `ou
 - Don't skip the smoke test in Phase 3. A template that scaffolds but doesn't build is worse than no template.
 - Don't pin `Node.js 16` / `Fumadocs 16` in prose anywhere. Cite minimums (`Node 22+`, `Fumadocs 16+`) and let `package.json` be canonical.
 - Don't ask the SE all 9 intake fields up front. Four required, the rest deferred to `site.config.ts`.
+- Don't use Mermaid (```` ```mermaid ````) in starter content. Fumadocs does not render it by default and an MDX page will appear as a raw code block. Use ASCII diagrams or drop images into `public/`.
+- Don't add duplicate `# Heading` lines at the top of an MDX page — the Fumadocs `DocsTitle` already renders the frontmatter `title` as an `h1`. Starter MDX should begin with a short lede paragraph or the first real section (`## ...`).
+- Don't put smart quotes (`"` `"` `'` `'`) or un-escaped apostrophes inside single-quoted JSX attribute values. MDX parses attributes as JSX; use double quotes, a template literal `title={\`…'…\`}`, or an expression container.
