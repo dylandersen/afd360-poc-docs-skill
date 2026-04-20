@@ -37,9 +37,9 @@ How to ask each intake question, with example answers and validation tips. The s
 
 After the 4 required fields, say:
 
-> "I've got what I need to scaffold. Want to set personas / integrations / deploy target / repo / your name now, or fill those in later via `site.config.ts`?"
+> "I've got what I need to scaffold. Want to set personas / integrations / deploy target / repo / your name / **customer website** now, or fill those in later via `site.config.ts`?"
 
-If the SE says "later," move on. If they say "now," walk through the five below. Never block scaffold on them.
+If the SE says "later," move on. If they say "now," walk through the six below. Never block scaffold on them. The **customer website** field is the single highest-impact optional — it auto-extracts logo, colors, and font into the site. Mention it explicitly in the summary prompt; don't let it get buried.
 
 ### 5. Primary personas
 
@@ -73,6 +73,31 @@ If the SE says "later," move on. If they say "now," walk through the five below.
 - **Example:** `Dylan Andersen`
 - **Default:** `os.userInfo().username` (so the handoff page is never empty)
 
+### 10. Customer's public website
+
+- **Prompt:** "Customer's public website? (I'll grab their logo, colors, and fonts automatically. Enter to skip.)"
+- **Example:** `https://www.acme.com`
+- **Default:** empty (skip extraction)
+- **Validation:** if provided, must parse as a URL. Auto-prepend `https://` if scheme is missing. Never bounce a bad URL back — pass it to the extractor and surface the failure in the Phase 2.5 review step instead.
+- **Passed to scaffold as:** `--customer-url "<value>"`. If empty or the SE says `skip`, omit the flag entirely.
+- **What happens next:**
+  - `scripts/scaffold.mjs` invokes `scripts/brand-extractor/index.mjs` before copying templates.
+  - The extractor GETs the URL (with `user-agent: afd360-poc-docs-skill/...`), respects `robots.txt`, parses HTML/CSS for meta tags + custom properties, and downloads logo/favicon/OG assets into `<target>/public/brand/`.
+  - A `<target>/data/brand-snapshot.json` is written with provenance for every value.
+  - The agent walks through a short **brand review** (Phase 2.5) before starting the dev server.
+- **Graceful failure:**
+  - If `robots.txt` disallows, the extractor exits cleanly (code 6). The scaffold continues without extracted brand; tell the SE and offer to set colors manually.
+  - If the URL is unreachable / 404 / timeout, same treatment (code 7).
+  - If extraction succeeds but a field is low-confidence, surface that in the review so the SE can override.
+- **Refresh later:**
+  ```bash
+  node <skill-dir>/scripts/brand-extractor/index.mjs \
+    --url "https://www.acme.com" \
+    --out ./data/brand-snapshot.json \
+    --assets-out ./public/brand
+  ```
+  Manual overrides in `site.config.ts` still win after a refresh.
+
 ## Confirmation
 
 After all required fields collected (and optional ones if the SE opted in), echo as one block:
@@ -89,6 +114,7 @@ Integrations:    ServiceNow, Snowflake, Slack
 Deploy target:   Vercel, Static export   (primary: Vercel)
 Repo URL:        https://github.com/acme/service-cloud-agent-poc-docs
 SE:              Dylan Andersen
+Customer site:   https://www.acme.com      (brand auto-extraction will run)
 ```
 
 Ask: **"Ready to scaffold? (yes / edit)"** before calling `scripts/scaffold.mjs`.

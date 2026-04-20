@@ -13,13 +13,14 @@ A Next.js + Fumadocs site at a directory the SE chooses, with:
 
 - Opinionated sidebar structure tuned for a POC handoff
 - Pages pre-filled with customer + POC context and **starter content** (real tables, ASCII system/ERD sketches, example callouts) the SE can edit in place. Mermaid is intentionally **not** used in starter content because Fumadocs ships without a Mermaid renderer — SEs should drop a PNG/SVG into `public/` if they want a richer diagram.
-- A single `site.config.ts` file that centralizes every knob an SE typically wants to change (title, colors, personas, integrations, repo URL)
+- A single `site.config.ts` file that centralizes every knob an SE typically wants to change (customer, POC, theme colors, fonts, logo, personas, integrations, repo URL)
+- **Auto-extracted customer branding.** If the SE provides the customer's public website during intake, the scaffolder runs `scripts/brand-extractor/index.mjs` against that URL and bakes the logo, favicon, OG hero, primary/secondary colors, and detected font family (with a Google-Fonts neighbor suggested for proprietary fonts) into `site.config.ts` + `public/brand/` + `data/brand-snapshot.json`. Respects `robots.txt`; always surfaces what was extracted for SE review; every value is overrideable in `site.config.ts`.
 - Static client-side search (Orama), `llms-full.txt`, OG image route
 - Tailwind v4, TypeScript strict, works with `pnpm` (preferred), `npm`, or `bun`
 
 The template tracks **Fumadocs 16+** and requires **Node 22+**. The template's `package.json` is the source of truth for versions — do not hardcode versions anywhere in this skill's prose.
 
-> **Status:** The specification in this file is stable, but the implementing artifacts (`scripts/preflight.mjs`, `scripts/scaffold.mjs`, `scripts/verify-placeholders.mjs`, and `templates/fumadocs-poc/`) are not yet checked in. Until they land, `/setup-docs` and `/update-docs` will fail at Phase 0. Build order: template → scaffold.mjs → verify-placeholders.mjs → preflight.mjs.
+> **Status:** `scripts/scaffold.mjs`, `scripts/brand-extractor/`, and `templates/fumadocs-poc/` are implemented and passing `next build`. `scripts/preflight.mjs` and `scripts/verify-placeholders.mjs` are specified here but not yet on disk — until they land, skip those phases and degrade to a bare `node --version` check + manual inspection. Build order: template → scaffold.mjs → brand-extractor → verify-placeholders.mjs → preflight.mjs.
 
 ## Invocation
 
@@ -66,8 +67,9 @@ If anything fails, **stop and print the exact install command** for the SE's pla
 7. Deploy target — defaults to `Not decided`
 8. Repo URL — defaults to empty
 9. SE name — defaults to the OS user (`os.userInfo().username`)
+10. **Customer's public website** — URL. If provided, the scaffolder auto-extracts brand (logo, colors, font, favicon, OG hero). Empty → skip. Auto-prepend `https://` if scheme missing.
 
-Ask for the 4 required fields one at a time. **Do not ask optional fields unless the SE volunteers them.** At the end, offer: "I've got what I need. Want to set personas / integrations / deploy target / repo / your name now, or fill those in later via `site.config.ts`?"
+Ask for the 4 required fields one at a time. **Do not ask optional fields unless the SE volunteers them.** At the end, offer: "I've got what I need. Want to set personas / integrations / deploy target / repo / your name / **customer website** now, or fill those in later via `site.config.ts`?" The customer-website field is the single highest-impact optional — always mention it in the summary prompt.
 
 Derive slugs from names: lowercase, hyphenate, strip punctuation. Confirm all values back in one compact summary before scaffolding.
 
@@ -97,16 +99,49 @@ node "<skill-dir>/scripts/scaffold.mjs" \
   --product-area "<PRODUCT_AREA>" \
   --personas "<PERSONAS_OR_DEFAULT>" \
   --integrations "<INTEGRATIONS_OR_DEFAULT>" \
-  --deploy-targets "<COMMA_SEPARATED_DEPLOY_TARGETS_OR_DEFAULT>" \
+  --deploy-target "<DEPLOY_TARGET_OR_DEFAULT>" \
   --repo-url "<REPO_URL_OR_EMPTY>" \
-  --se-name "<SE_NAME_OR_OS_USER>"
+  --se-name "<SE_NAME_OR_OS_USER>" \
+  [--customer-url "<CUSTOMER_WEBSITE_URL>"] \
+  [--no-brand-extract] \
+  [--brand-snapshot "<ABS_PATH_TO_EXISTING_SNAPSHOT>"]
 ```
 
 Resolve `<skill-dir>` from the absolute path of this `SKILL.md` file.
 
-The scaffold script handles: directory creation, recursive copy, placeholder replacement across all text files, `.gitignore` generation, `site.config.ts` generation, and idempotent re-runs. It also derives `__DEPLOY_TARGET_PRIMARY__` (first item in `--deploy-targets`) and the `__INCLUDE_*__` booleans from `--product-area` before substitution.
+When `--customer-url` is provided, the scaffolder invokes `scripts/brand-extractor/index.mjs` as a subprocess **before** copying the template. The extractor writes `<target>/data/brand-snapshot.json` and downloads assets into `<target>/public/brand/`. The scaffolder then emits matching theme placeholders into `site.config.ts`.
+
+Pass `--no-brand-extract` to keep the customer URL in `site.config.ts` but skip the network calls (useful for offline / air-gapped machines, or when the SE already ran the extractor manually).
+
+Pass `--brand-snapshot <path>` to reuse an existing snapshot (e.g. generated in a previous run or hand-edited). The scaffolder copies it plus a sibling `brand-assets/` directory into the target.
+
+The scaffold script handles: directory creation, recursive copy, placeholder replacement across all text files, `.gitignore` generation, brand asset installation, and idempotent re-runs.
 
 **After the script returns, run `scripts/verify-placeholders.mjs <target>`.** It scans the target for any leftover `__*__` tokens. If any remain, fail loudly — this means a template file was added without updating the REPLACEMENTS map.
+
+### Phase 2.5 — Brand review (only when `--customer-url` was used)
+
+When the scaffolder's output includes a `brand` key with `extractedFrom`, surface a scannable review to the SE **before** starting dev server. Example agent message:
+
+```
+Brand extracted from https://www.acme.com:
+
+  Primary       #005fb2   (from <meta theme-color>)
+  Secondary     #00a1e0   (from --brand-secondary CSS var)
+  Font          "Salesforce Sans" → neighbor "Inter"
+  Logo          public/brand/logo.svg
+  Favicon       public/brand/favicon.png
+  OG hero       public/brand/og-hero.png
+  WCAG          primary vs. white: 4.63 (pass)   vs. dark: 3.83 (fail)
+
+Anything to change before I boot the dev server? You can:
+  • Accept as-is (recommended — everything is overrideable in site.config.ts later)
+  • Edit a specific field now
+  • Refresh from the same URL ("refresh-brand")
+  • Skip the extracted branding entirely and fall back to defaults
+```
+
+If the extractor reported `robots-disallow` or `unreachable`, say so in plain English and offer to continue without extracted branding — do **not** stall the scaffold. If the primary color was nudged for WCAG contrast, show both the raw and nudged hex so the SE can see what changed and why.
 
 ### Phase 3 — Install & smoke test
 
@@ -175,6 +210,20 @@ All template files contain these literal, uppercase, double-underscored tokens. 
 | `__REPO_URL__` | Git remote URL | *(empty)* |
 | `__SE_NAME__` | SE display name | OS username |
 | `__YEAR__` | Current calendar year | Auto from script |
+| `__CUSTOMER_URL__` | Raw customer website URL (string interpolation) | *(empty)* |
+| `__CUSTOMER_URL_JS__` | JS-literal form of the URL for `site.config.ts` (`"..."` or `null`) | `null` |
+| `__THEME_PRIMARY_HEX__` | JS literal: resolved primary hex or `null` | `null` |
+| `__THEME_SECONDARY_HEX__` | JS literal: resolved secondary hex or `null` | `null` |
+| `__THEME_FONT_SANS_NAME__` | JS literal: detected font family or `null` | `null` |
+| `__THEME_FONT_SANS_PROVIDER__` | JS literal: `"google" \| "typekit" \| "custom" \| "system" \| null` | `null` |
+| `__THEME_FONT_SANS_NEIGHBOR__` | JS literal: nearest Google Font for proprietary families or `null` | `null` |
+| `__THEME_BRAND_LOGO_FILE__` | JS literal: filename within `public/brand/` or `null` | `null` |
+| `__THEME_BRAND_LOGO_ALT__` | JS literal: alt text for logo `<img>` or `null` | `null` |
+| `__THEME_FAVICON_FILE__` | JS literal: favicon filename within `public/brand/` or `null` | `null` |
+| `__THEME_OG_HERO_FILE__` | JS literal: OG image filename within `public/brand/` or `null` | `null` |
+| `__BRAND_EXTRACTED_FROM__` | JS literal: URL the snapshot came from or `null` | `null` |
+| `__BRAND_EXTRACTED_AT__` | JS literal: ISO timestamp or `null` | `null` |
+| `__BRAND_COMPANY_TAGLINE__` | JS literal: tagline pulled from og:description or `null` | `null` |
 
 ### Conditional rendering contract
 
@@ -193,10 +242,23 @@ To add a new placeholder: update `scripts/scaffold.mjs` `REPLACEMENTS` map, upda
 Paste these verbatim when an SE asks "how do I…":
 
 **Change the logo:**
-Replace `public/logo.png` with a 512×512 PNG. Fumadocs picks it up automatically.
+Drop a new file into `public/brand/logo.svg` (or `.png`) and update `theme.brandLogoFile` in `site.config.ts` to match the filename. If the SE never provided a customer URL at scaffold time, `public/brand/` won't exist yet — just `mkdir -p public/brand && cp <logo> public/brand/` and set `theme.brandLogoFile = "logo.svg"`.
 
 **Change the primary color:**
-Edit `site.config.ts`, update the `theme.primary` hex. One variable, propagates to sidebar / buttons / links.
+Edit `site.config.ts`, set `theme.primaryHex = "#005fb2"`. That value beats whatever the brand extractor put in `data/brand-snapshot.json`. Propagates to sidebar-active, link color, buttons, and Fumadocs `--fd-primary` through the CSS variables emitted in `app/layout.tsx`.
+
+**Refresh brand from the customer's website:**
+```bash
+cd <target>
+node <skill-dir>/scripts/brand-extractor/index.mjs \
+  --url "https://www.<customer>.com" \
+  --out ./data/brand-snapshot.json \
+  --assets-out ./public/brand
+```
+Manual overrides in `site.config.ts` still win — only the snapshot-backed fields refresh.
+
+**Opt out of brand extraction for this POC:**
+Set the `theme.*` fields in `site.config.ts` back to `null` and delete `data/brand-snapshot.json`. The site falls back to clean Fumadocs defaults.
 
 **Add a new top-level section called "Security":**
 ```
@@ -221,6 +283,7 @@ Edit `next.config.mjs`, set `output: 'export'`. Run `pnpm build`. Deploy the `ou
 - [`scripts/preflight.mjs`](scripts/preflight.mjs) — environment check
 - [`scripts/scaffold.mjs`](scripts/scaffold.mjs) — the one and only scaffolder
 - [`scripts/verify-placeholders.mjs`](scripts/verify-placeholders.mjs) — post-scaffold sanity check
+- [`scripts/brand-extractor/`](scripts/brand-extractor/) — zero-dependency brand extractor that reads a customer's public site, parses HTML/CSS, downloads logo/favicon/OG images, runs WCAG contrast checks, and writes `data/brand-snapshot.json`. Invoked automatically by `scaffold.mjs` when `--customer-url` is present; callable standalone for refreshes.
 
 ## Anti-patterns
 

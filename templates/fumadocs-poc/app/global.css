@@ -1,12 +1,30 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* --font-sans-brand is set by lib/resolve-theme.ts when a brand sans font
+     is known; it falls back to Geist when absent. */
+  --font-sans: var(--font-sans-brand, var(--font-geist-sans)), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+
+/* Map the brand CSS custom properties emitted by lib/resolve-theme.ts onto
+   Fumadocs' own tokens. When --brand-primary is unset we let Fumadocs use
+   its default accent, so sites without a brand snapshot look clean. */
+:root {
+  --fd-primary: var(--brand-primary, var(--fd-primary));
+  --fd-primary-foreground: var(--brand-primary-foreground, var(--fd-primary-foreground));
+  --fd-accent: var(--brand-secondary, var(--fd-accent));
+  --fd-accent-foreground: var(--brand-secondary-foreground, var(--fd-accent-foreground));
+  --fd-radius: var(--brand-radius, var(--fd-radius));
+}
+
+.dark {
+  --fd-primary: var(--brand-primary, var(--fd-primary));
+  --fd-accent: var(--brand-secondary, var(--fd-accent));
+}
 
 html {
   font-size: 17px;

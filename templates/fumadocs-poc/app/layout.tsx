@@ -2,6 +2,8 @@ import { Provider } from './provider';
 import './global.css';
 import { Geist, Geist_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
+import { resolveTheme, themeCssVars } from '../lib/resolve-theme';
+import siteConfig from '../site.config';
 
 const geist = Geist({
   subsets: ['latin'],
@@ -13,17 +15,32 @@ const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
 });
 
+// Resolved at build time — reads data/brand-snapshot.json + site.config.ts.
+const theme = resolveTheme();
+const cssVars = themeCssVars(theme);
+
 export const metadata: Metadata = {
   title: {
-    template: '__CUSTOMER_NAME__ Docs | __POC_NAME__ | %s',
-    default: '__CUSTOMER_NAME__ Docs | __POC_NAME__',
+    template: `${siteConfig.customer.name} Docs | ${siteConfig.poc.name} | %s`,
+    default: `${siteConfig.customer.name} Docs | ${siteConfig.poc.name}`,
   },
-  description: '__CUSTOMER_NAME__ — __POC_NAME__ handoff documentation (__PRODUCT_AREA__).',
+  description: `${siteConfig.customer.name} — ${siteConfig.poc.name} handoff documentation (${siteConfig.poc.productArea}).`,
+  icons: theme.faviconSrc
+    ? { icon: theme.faviconSrc, apple: theme.faviconSrc }
+    : undefined,
+  openGraph: theme.ogHeroSrc
+    ? {
+        images: [{ url: theme.ogHeroSrc }],
+      }
+    : undefined,
 };
 
 export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <head>
+        {cssVars ? <style dangerouslySetInnerHTML={{ __html: cssVars }} /> : null}
+      </head>
       <body className="flex flex-col min-h-screen font-sans">
         <Provider>{children}</Provider>
       </body>
