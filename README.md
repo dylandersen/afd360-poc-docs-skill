@@ -225,23 +225,37 @@ The agent asks for **two things**:
 
 ### Built-in section library
 
-`add-section` pulls from `templates/fumadocs-poc/content/docs/_sections/`. Available slugs:
+`add-section` pulls from `templates/sections/` (skill-level). Available slugs:
 
 | Slug | Purpose |
 |------|---------|
-| `security` | Threat model, sharing rules, secrets handling, permset audit |
-| `observability` | Logging, monitoring, alerting, agent transcript review |
-| `rollout-plan` | Phased rollout, comms plan, training, success metrics |
-| `faq` | Customer-facing frequently asked questions |
-| `glossary` | Acronyms and terms specific to this POC |
-| `release-notes` | Ongoing change log post-handoff |
-| `runbook` | Standalone operational runbook (when `handoff.mdx` gets too long) |
+| `security` | Threat model, sharing rules, secrets, perm audit, MFA, residency |
+| `security-questionnaire` | Pre-answered SIG-Lite / CAIQ-Lite vendor responses |
+| `observability` | Signals, review cadence, thresholds, SLO snapshot |
+| `rollout-plan` | Phased rollout, comms, training, success metrics, rollback |
+| `cost-model` | Flex Credit / volume-based cost projections + levers |
+| `demo-script` | 5-min and 20-min demo scripts the customer can run themselves |
+| `faq` | Customer-facing FAQ seeded with the questions admins ask in week 2 |
+| `glossary` | Salesforce + product + customer-specific acronyms and terms |
+| `runbook` | Standalone operational runbook (when `handoff.mdx` grows past ~300 lines) |
+| `release-notes` | Keep-a-Changelog format with v0.1.0 stub and Unreleased bucket |
+
+You can also pre-include any of these during initial scaffold. `/setup-docs` will offer the list as a multi-select after intake — skip anything you don't have answers for yet.
 
 To see what's actually on disk:
 
 ```bash
-node scripts/scaffold.mjs --list-sections
+node scripts/scaffold.mjs --list-sections          # human-readable
+node scripts/scaffold.mjs --list-sections --json   # machine-readable
 ```
+
+To add one to an already-scaffolded site (also what `/update-docs add-section` runs under the hood):
+
+```bash
+node scripts/scaffold.mjs --add-section security --target /abs/path/to/site
+```
+
+The script reads intake values from `<target>/.poc-docs-meta.json` (written during initial scaffold), substitutes placeholders, and inserts the slug into `meta.json` **before `troubleshooting`** so Troubleshooting always stays last in the sidebar. Re-running on an already-added slug is a no-op unless `--force` is passed.
 
 ### Natural-language invocation
 

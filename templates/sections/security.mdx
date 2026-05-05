@@ -1,0 +1,90 @@
+---
+title: Security
+icon: ShieldCheck
+description: Threat model, sharing, secrets, and access posture for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Security posture for the **__POC_NAME__** delivered to **__CUSTOMER_NAME__**. This page is the
+single source of truth the customer's security team should review before promoting the
+POC to production.
+
+<Callout type="warn" title="POC vs. production">
+This POC was delivered for evaluation. Items marked **production-gap** below must be
+closed before the workload handles regulated or sensitive data.
+</Callout>
+
+## Threat model
+
+| Asset | Threat | Likelihood | Impact | Mitigation |
+|-------|--------|------------|--------|------------|
+| Salesforce data accessed by __PRODUCT_AREA__ | Over-permissioned action / topic | Medium | High | Permset audit + scope guards (see below) |
+| Integration credentials (__INTEGRATIONS__) | Credential leak / replay | Low | High | Named Credentials, no secrets in code |
+| Agent transcripts / prompts | PII exfiltration | Medium | Medium | Prompt redaction, transcript retention policy |
+| Sample data | Real customer PII in sandbox | Medium | Medium | Synthetic data only — see [Data Model](/docs/data-model) |
+
+{/* TODO(__SE_NAME__): Add customer-specific threats — anything called out during the
+    security review or that the customer's CISO asked about explicitly. */}
+
+## Sharing & access
+
+- **Org-wide defaults**: _list any OWD changes the POC required_
+- **Sharing rules**: _criteria-based and owner-based rules added by the POC_
+- **Permission sets**: `__POC_SLUG___User`, `__POC_SLUG___Admin`
+- **Profiles modified**: _list any profile changes; ideally none — prefer permsets_
+
+<Callout type="info" title="Permset audit">
+Run the [`sf-permissions`](https://help.salesforce.com/permission-sets) review before
+go-live. Anything that grants `Modify All Data`, `View All Data`, or `Author Apex`
+must be justified in the table below.
+</Callout>
+
+| Permset | Granted to | Sensitive perms | Why it's needed |
+|---------|-----------|-----------------|-----------------|
+| `__POC_SLUG___User` | __PERSONAS__ | _list_ | _justify_ |
+| `__POC_SLUG___Admin` | _admin group_ | _list_ | _justify_ |
+
+## Secrets & credentials
+
+| Credential | Where it lives | Rotation cadence | Owner |
+|------------|---------------|------------------|-------|
+| _Named Credential 1_ | Setup → Named Credentials | _quarterly_ | _customer admin_ |
+| _Auth Provider_ | Setup → Auth. Providers | _per IdP policy_ | _customer IT_ |
+
+<Callout type="error" title="Never commit secrets">
+No `.env`, no `apex:executeAnonymous` with hardcoded keys, no credentials in MDX.
+If a credential leaks into git history, rotate immediately and rewrite history with
+`git filter-repo` or BFG.
+</Callout>
+
+## Authentication & MFA
+
+- [ ] MFA enforced for all __PERSONAS__
+- [ ] Session settings reviewed (timeout, IP ranges, login hours)
+- [ ] My Domain enabled and primary
+- [ ] Login Flow / Identity Verification configured if customer policy requires
+
+## Data residency & retention
+
+- **Data residency**: _Salesforce instance region — confirm matches customer policy_
+- **Backup**: _Salesforce Backup, third-party (OwnBackup, Gearset), or none_
+- **Retention**: _record retention policy for objects touched by the POC_
+- **Right-to-be-forgotten**: _process for honoring deletion requests_
+
+## Production gaps
+
+Things explicitly **not** done as part of the POC. Close these before promotion.
+
+- [ ] Full security review by the customer's security team
+- [ ] Penetration test of the integration surface (__INTEGRATIONS__)
+- [ ] DR / backup plan validated against the customer's RTO/RPO
+- [ ] Logging routed to the customer's SIEM
+- [ ] Secrets vault integration (HashiCorp Vault, AWS Secrets Manager, etc.) if customer policy requires
+
+## Escalation
+
+A suspected security incident in this workload should follow the customer's
+existing IR process. The POC team's contact for security questions is
+__SE_NAME__ — copy them on initial triage so they can help reproduce.

@@ -1,0 +1,109 @@
+---
+title: Observability
+icon: Activity
+description: Logs, metrics, alerts, and review cadence for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+How the **__POC_NAME__** is monitored in flight, and how the customer team should
+review it on a recurring cadence.
+
+<Callout type="info" title="Why this matters">
+A POC that nobody is watching becomes a production incident the day someone notices.
+Fill in the cadence below before handoff and assign owners.
+</Callout>
+
+## Signal sources
+
+| Source | What it tells you | Retention | Owner |
+|--------|-------------------|-----------|-------|
+| Salesforce **Debug Logs** | Apex execution, governor limits | 24h–7d | _customer admin_ |
+| **Setup Audit Trail** | Config changes (who, what, when) | 6 months | _customer admin_ |
+| **Event Monitoring** (EE/UE) | Login, API, report exports | per license | _customer admin_ |
+| **Flow Error Emails** | Flow failures | until cleared | _flow owner_ |
+| Agentforce **Session transcripts** | Agent reasoning + topic routing | per retention policy | _SE on-call_ |
+| Integration logs (__INTEGRATIONS__) | External callout health | per source system | _integration lead_ |
+
+{/* TODO(__SE_NAME__): If __PRODUCT_AREA__ includes Agentforce, link the customer's
+    Agent Studio "Session Transcripts" tab here. Note the retention setting they
+    chose and who reviews them. */}
+
+## Review cadence
+
+<Tabs items={['Daily', 'Weekly', 'Monthly', 'Per release']}>
+
+<Tab value="Daily">
+
+- Scan **Flow Error Emails** for new failures.
+- If __PRODUCT_AREA__ includes Agentforce: spot-check 5–10 random session transcripts
+  for classification misses and unsafe responses.
+- Watch the integration health dashboard (__INTEGRATIONS__) for callout failures.
+
+</Tab>
+
+<Tab value="Weekly">
+
+- Review **Setup Audit Trail** for unexpected config changes.
+- Pull the last 7 days of `sf apex list log` for ERROR-level entries.
+- If __PRODUCT_AREA__ includes Agentforce: run `sf agent test run` against the
+  saved test set and check for regressions.
+
+</Tab>
+
+<Tab value="Monthly">
+
+- Re-run the **permset audit** described in [Security](/docs/security#sharing--access).
+- Validate Named Credential health (none expired, none failing auth).
+- Review session transcript retention — purge anything past policy.
+- Update this page with any new patterns surfaced during the month.
+
+</Tab>
+
+<Tab value="Per release">
+
+- Re-run the smoke test in [Setup → Verify](/docs/setup#verify).
+- Re-run agent + flow + apex test suites.
+- Update the [Release Notes](/docs/release-notes) with what changed and what to watch.
+
+</Tab>
+
+</Tabs>
+
+## Alerts & thresholds
+
+| Signal | Threshold | Action | Channel |
+|--------|-----------|--------|---------|
+| Flow error rate | > 1% over 1h | Page _flow owner_ | _email / Slack_ |
+| Apex unhandled exceptions | > 5 / hour | Page _SE on-call_ | _email / Slack_ |
+| Agentforce classification miss-rate | > 10% on test set | Open ticket | _backlog_ |
+| Named Credential 401/403 | any | Page _integration lead_ | _email_ |
+| Sandbox storage > 80% | weekly | Notify _customer admin_ | _email_ |
+
+{/* TODO(__SE_NAME__): Replace placeholder thresholds with customer-agreed values.
+    "1% over 1h" is a reasonable default for a low-volume POC; high-volume
+    workloads need stricter SLOs. */}
+
+## SLO snapshot
+
+| Metric | Target | Measurement window | Notes |
+|--------|--------|---------------------|-------|
+| End-to-end latency (happy path) | < 5s p95 | 7-day rolling | _measured how?_ |
+| Agent classification accuracy | ≥ 90% | per test run | based on Agentforce test set |
+| Flow success rate | ≥ 99% | 7-day rolling | excludes user-input errors |
+| Integration callout success | ≥ 99.5% | 7-day rolling | __INTEGRATIONS__ |
+
+## Logs you'll actually open
+
+```bash
+sf apex list log --target-org __CUSTOMER_SLUG__-poc --limit 25
+sf apex tail log --target-org __CUSTOMER_SLUG__-poc
+sf agent test run --target-org __CUSTOMER_SLUG__-poc
+```
+
+## Open items
+
+- [ ] Decide log shipping strategy (Event Monitoring → SIEM vs. polling)
+- [ ] Agree thresholds with the customer's operations team
+- [ ] Document who pages whom during business hours and after-hours

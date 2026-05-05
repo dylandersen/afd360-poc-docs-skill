@@ -1,0 +1,109 @@
+---
+title: Rollout Plan
+icon: Rocket
+description: Phased rollout, comms, training, and rollback for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+How **__CUSTOMER_NAME__** moves the **__POC_NAME__** from POC into the hands of real users
+without a fire drill.
+
+<Callout type="info" title="Three phases, three exit criteria">
+Each phase has explicit go/no-go criteria. Don't move forward until the criteria are
+green — it's cheaper to delay a phase than to roll back from production.
+</Callout>
+
+## Phases
+
+### Phase 1 — Pilot
+
+- **Audience**: 5–10 hand-picked users from __PERSONAS__
+- **Duration**: 2 weeks
+- **Goal**: validate happy path with real (non-test) data; collect qualitative feedback
+
+**Exit criteria:**
+
+- [ ] ≥ 80% of pilot users complete the happy-path scenario unaided
+- [ ] Zero P1 incidents
+- [ ] Pilot retro completed; top 3 issues either fixed or scoped out
+
+### Phase 2 — Expand
+
+- **Audience**: One full team / business unit (~50 users)
+- **Duration**: 4 weeks
+- **Goal**: validate at scale; tune thresholds; train tier-1 support
+
+**Exit criteria:**
+
+- [ ] SLOs from [Observability](/docs/observability#slo-snapshot) met for the full window
+- [ ] Tier-1 support team trained and resolving ≥ 70% of tickets without escalation
+- [ ] Customer-side change-management approval for general availability
+
+### Phase 3 — General availability
+
+- **Audience**: All __PERSONAS__
+- **Duration**: ongoing
+- **Goal**: production operations, continuous improvement
+
+## Communications plan
+
+| Audience | Channel | Cadence | Owner | Content |
+|----------|---------|---------|-------|---------|
+| Executive sponsors | Email | Bi-weekly | _customer PM_ | Status, blockers, metrics |
+| __PERSONAS__ pilot group | Slack / Teams | Weekly | _customer admin_ | What's new, known issues |
+| Tier-1 support | Internal wiki | Per release | _support lead_ | Runbook updates, FAQs |
+| All staff | All-hands / email | Phase boundaries | _customer comms_ | Launch announcements |
+
+## Training plan
+
+| Persona | Format | Duration | Materials | Owner |
+|---------|--------|----------|-----------|-------|
+| Admin | Workshop + recording | 2h | This docs site + demo org | __SE_NAME__ |
+| End User | Self-serve video | 15min | _link to Loom / Vidyard_ | _customer L&D_ |
+| Tier-1 Support | Workshop + shadow | 4h | Runbook + [Troubleshooting](/docs/troubleshooting) | _support lead_ |
+
+## Success metrics
+
+Track these from Phase 1 onward. Establish a baseline during pilot.
+
+| Metric | Definition | Target | Source |
+|--------|-----------|--------|--------|
+| Adoption | % of __PERSONAS__ active weekly | ≥ 70% by GA + 30 days | login + activity reports |
+| Task completion | % of attempts that succeed | ≥ 85% | flow success rate |
+| Time saved | minutes vs. baseline workflow | ≥ 5 min/task | survey + logs |
+| CSAT | post-interaction rating | ≥ 4 / 5 | post-flow survey |
+
+{/* TODO(__SE_NAME__): Anchor each metric to a specific Salesforce report or
+    dashboard URL. Vague metrics never get measured. */}
+
+## Rollback plan
+
+<Callout type="warn" title="Define rollback before you need it">
+The day you need a rollback is the day you find out you don't have one. Test the
+rollback in a sandbox before going to GA.
+</Callout>
+
+<Steps>
+  <Step>
+    **Disable** the entry point — deactivate the Agentforce agent or unschedule the
+    triggering flow. Users see the prior behavior immediately.
+  </Step>
+  <Step>
+    **Communicate** to the pilot group within 1 hour using the comms channels above.
+  </Step>
+  <Step>
+    **Investigate** with evidence captured per [Troubleshooting → Before you debug](/docs/troubleshooting#before-you-debug).
+  </Step>
+  <Step>
+    **Decide**: roll forward with a fix, stay rolled back, or escalate to __SE_NAME__.
+  </Step>
+</Steps>
+
+## Open decisions
+
+- [ ] Pilot user list signed off by sponsor
+- [ ] Pilot exit criteria signed off by sponsor
+- [ ] GA date target (with realistic buffer)
+- [ ] Owner for the post-launch hyper-care window (typically 2 weeks)

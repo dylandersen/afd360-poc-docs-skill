@@ -1,0 +1,115 @@
+---
+title: Cost Model
+icon: DollarSign
+description: Flex Credit and license-cost projections for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+How much the **__POC_NAME__** costs to operate at different volumes. Use these
+numbers to size budgets and to set thresholds in
+[Observability → SLO snapshot](/docs/observability#slo-snapshot).
+
+<Callout type="warn" title="Estimates, not quotes">
+The numbers below are **engineering estimates** based on per-event metering.
+Commercial pricing changes — confirm with the __CUSTOMER_NAME__ account team
+before signing anything.
+</Callout>
+
+## Cost drivers
+
+| Driver | Unit | Frequency | Notes |
+|--------|------|-----------|-------|
+| Agentforce **prompt** | per 1K tokens | per agent turn | __PRODUCT_AREA__-dependent |
+| Agentforce **action** invocation | per call | per agent turn | counts Apex + Flow + Prompt Template actions |
+| Data 360 **rows ingested** | per 1M rows | per stream run | depends on stream cadence |
+| Data 360 **CI / segment compute** | per query | per recompute | tied to refresh cadence |
+| Salesforce **API calls** | per 1K | per integration call | per-org daily limit |
+| Salesforce **storage** | per GB | monthly | base + per-license allowance |
+
+{/* TODO(__SE_NAME__): Strip rows that don't apply to __PRODUCT_AREA__. If the
+    POC is platform-only, the Agentforce/Data 360 rows can go entirely. */}
+
+## Volume scenarios
+
+<Tabs items={['Pilot (low)', 'Expand (medium)', 'GA (high)']}>
+
+<Tab value="Pilot (low)">
+
+| Driver | Volume | Monthly cost (est.) |
+|--------|--------|---------------------|
+| Agent turns | _e.g. 500/day × 22 days = 11K_ | _$_ |
+| Action invocations | _e.g. 2× per turn = 22K_ | _$_ |
+| Data ingest | _e.g. 100K rows / month_ | _$_ |
+| API calls | _e.g. 10K / day_ | _within standard limits_ |
+| Storage | _e.g. < 1 GB additional_ | _within standard allowance_ |
+| **Estimated monthly total** | | _$_ |
+
+Pilot is typically free under existing license entitlements. The number above is
+the **incremental** cost above the customer's current Salesforce spend.
+
+</Tab>
+
+<Tab value="Expand (medium)">
+
+| Driver | Volume | Monthly cost (est.) |
+|--------|--------|---------------------|
+| Agent turns | _e.g. 5K/day × 22 days = 110K_ | _$_ |
+| Action invocations | _e.g. 220K_ | _$_ |
+| Data ingest | _e.g. 1M rows / month_ | _$_ |
+| API calls | _e.g. 100K / day_ | _watch limits_ |
+| Storage | _e.g. 5–10 GB additional_ | _$_ |
+| **Estimated monthly total** | | _$_ |
+
+</Tab>
+
+<Tab value="GA (high)">
+
+| Driver | Volume | Monthly cost (est.) |
+|--------|--------|---------------------|
+| Agent turns | _e.g. 50K/day × 22 days = 1.1M_ | _$_ |
+| Action invocations | _e.g. 2.2M_ | _$_ |
+| Data ingest | _e.g. 10M rows / month_ | _$_ |
+| API calls | _will exceed standard limits — needs add-on_ | _$_ |
+| Storage | _e.g. 50+ GB additional_ | _$_ |
+| **Estimated monthly total** | | _$_ |
+
+GA volume typically requires API call add-ons and may benefit from Flex Credit
+purchase commitments.
+
+</Tab>
+
+</Tabs>
+
+## Levers if costs surprise you
+
+1. **Cache hot reads.** If the agent repeatedly fetches the same record in a
+   session, cache it. See
+   [Architecture → Design decisions](/docs/architecture#design-decisions) for the
+   pattern.
+2. **Tighten topic scope.** A narrower classification description means fewer
+   off-topic turns the LLM has to reject.
+3. **Lower data refresh cadence.** Real-time ingestion is expensive; many CIs
+   are happy with hourly or daily refreshes.
+4. **Batch external callouts.** Replace per-record callouts with bulk calls
+   wrapped in a queueable.
+5. **Archive cold records.** Storage cost compounds; archive records past the
+   retention window per policy.
+
+## Forecasting checklist
+
+- [ ] Volumes confirmed with the customer (don't guess)
+- [ ] Pricing assumptions dated and sourced (link to the order form / pricing sheet)
+- [ ] One-time vs. recurring costs separated
+- [ ] License changes flagged (e.g. new Agentforce SKUs)
+- [ ] Forecast horizon agreed (12 months is typical)
+- [ ] Sensitivity analysis: what does +50% volume do to monthly cost?
+
+## Related
+
+- [Rollout Plan → Phases](/docs/rollout-plan#phases) — phase volumes feed into the cost projection
+- [Observability → SLO snapshot](/docs/observability#slo-snapshot) — overspend often correlates with SLO drift
+
+{/* TODO(__SE_NAME__): If you have access to the `sf-flex-estimator` skill,
+    paste the per-scenario output below and link to the saved estimate file. */}

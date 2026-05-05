@@ -1,0 +1,59 @@
+---
+title: Glossary
+icon: BookOpen
+description: Acronyms and terms used throughout the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+The shorthand the **__POC_NAME__** team uses, decoded for new joiners.
+
+<Callout type="info" title="Add as you go">
+If a term gets a question twice, it belongs on this page. Send PRs against
+`content/docs/glossary.mdx` in `__REPO_URL__`.
+</Callout>
+
+## Salesforce platform
+
+| Term | Meaning |
+|------|---------|
+| **Apex** | Salesforce's server-side, Java-like language. |
+| **CDC** | Change Data Capture — push notifications for record changes. |
+| **DLO / DMO** | Data Lake Object / Data Model Object — Data Cloud's raw and harmonized layers. |
+| **DX / SFDX** | Salesforce Developer Experience — the modern source-driven dev workflow + CLI. |
+| **FLS** | Field-Level Security — controls which users can see/edit individual fields. |
+| **Flow** | Salesforce's declarative automation tool (record-triggered, screen, scheduled, etc.). |
+| **LWC** | Lightning Web Component — the modern Salesforce UI framework. |
+| **Named Credential** | Salesforce's stored auth + endpoint config for outbound callouts. |
+| **OWD** | Org-Wide Defaults — the base sharing posture before sharing rules apply. |
+| **Permset / PSG** | Permission Set / Permission Set Group — additive access bundles. |
+| **SOQL / SOSL** | Salesforce Object Query Language / Search Language — read APIs for data. |
+| **`sf` CLI** | Salesforce CLI v2 — the command-line tool used for deploys, tests, data, and Agentforce. |
+
+## __PRODUCT_AREA__ specifics
+
+{/* TODO(__SE_NAME__): Trim this section to the products in scope. Strip rows that
+    don't apply to __PRODUCT_AREA__. */}
+
+| Term | Meaning |
+|------|---------|
+| **Agentforce** | Salesforce's GenAI agent platform — agents, topics, actions, instructions. |
+| **Topic** | An Agentforce routing primitive — one classifier + a set of actions. |
+| **Action** | A single capability an Agentforce agent can take (Apex, Flow, Prompt Template, MCP). |
+| **Prompt Template** | A reusable prompt definition built in Prompt Builder. |
+| **Data 360** | The product family covering Data Cloud + adjacent harmonization features. |
+| **Identity Resolution** | The Data Cloud feature that stitches duplicate person records. |
+| **Calculated Insight** | A SQL-defined aggregation over DMOs in Data Cloud. |
+| **Segment** | A queryable audience defined over DMOs / CIs in Data Cloud. |
+| **Activation** | A push of a segment to a downstream system. |
+
+## __CUSTOMER_NAME__-specific
+
+{/* TODO(__SE_NAME__): Capture acronyms and product names that only mean something
+    inside __CUSTOMER_NAME__. The customer team will thank you when a new joiner
+    asks "what's a TPS?" in week 2. */}
+
+| Term | Meaning |
+|------|---------|
+| _ACME_ | _Anti-Counterfeiting Marketing Engine — internal system the POC integrates with._ |
+| _TPS_ | _Total Production Score — calculated insight used by the agent's recommendation action._ |

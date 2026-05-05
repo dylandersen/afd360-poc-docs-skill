@@ -1,0 +1,126 @@
+---
+title: FAQ
+icon: HelpCircle
+description: Frequently asked questions about the __POC_NAME__
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Answers to questions the **__CUSTOMER_NAME__** team is most likely to ask in the first
+weeks after handoff. Add to this page as new questions come up — that's how it stays
+useful.
+
+<Callout type="info" title="If you don't see your question">
+Check [Troubleshooting](/docs/troubleshooting) first — it's structured by symptom.
+Still stuck? Reach out to __SE_NAME__.
+</Callout>
+
+## General
+
+<Accordions type="single">
+
+<Accordion id="what-is-poc" title="What is the __POC_NAME__ and what is it not?">
+This POC demonstrates __PRODUCT_AREA__ for the __CUSTOMER_NAME__ use case. It's a
+working slice — real metadata, real flows, real agents — sized for evaluation, not
+production. Anything marked **production-gap** in [Security](/docs/security#production-gaps)
+must be closed before regulated workloads.
+</Accordion>
+
+<Accordion id="who-owns-what" title="Who owns this after handoff?">
+See the [Handoff → Ownership](/docs/handoff#ownership) table. Short version: the
+customer admin owns Salesforce metadata + agents day-to-day; __SE_NAME__ stays
+available for the agreed support window.
+</Accordion>
+
+<Accordion id="extend-it" title="Can we extend or modify the POC?">
+Yes — that's the point. The repo at `__REPO_URL__` has the source. Standard
+Salesforce DX workflow: branch, change, deploy to a sandbox, validate, merge.
+Read [Architecture → Design decisions](/docs/architecture#design-decisions) before
+making structural changes so you don't accidentally undo a tradeoff.
+</Accordion>
+
+</Accordions>
+
+## Operations
+
+<Accordions type="single">
+
+<Accordion id="who-pages-whom" title="Something broke. Who do we page?">
+1. Capture evidence per [Troubleshooting → Before you debug](/docs/troubleshooting#before-you-debug).
+2. Check [Troubleshooting](/docs/troubleshooting) and the [FAQ](/docs/faq).
+3. Page the on-call owner from [Handoff → Ownership](/docs/handoff#ownership).
+4. If still stuck, contact __SE_NAME__ with the evidence.
+</Accordion>
+
+<Accordion id="sandbox-refresh" title="We refreshed the sandbox — what breaks?">
+Named Credentials and assigned permsets are wiped during a full-copy refresh.
+Re-authenticate Named Credentials and re-run the permset assignment commands from
+[Setup → Install](/docs/setup#install). See [Troubleshooting](/docs/troubleshooting)
+for the full list.
+</Accordion>
+
+<Accordion id="how-monitor" title="How do we know it's healthy?">
+See [Observability → SLO snapshot](/docs/observability#slo-snapshot) and the
+review cadence on the same page. The short answer: weekly Apex log scan,
+weekly transcript spot-check, monthly permset audit.
+</Accordion>
+
+</Accordions>
+
+## __PRODUCT_AREA__ specifics
+
+<Accordions type="single">
+
+<Accordion id="agent-update" title="How do we update the agent's behavior?">
+{/* TODO(__SE_NAME__): Remove this question if __PRODUCT_AREA__ does not include Agentforce. */}
+
+Edit the agent's topic, action, or instructions in Agent Studio. Run
+`sf agent test run` against the saved test set before promoting. See
+[Agents & Flows → Topics](/docs/agents-and-flows#topics) for the inventory.
+</Accordion>
+
+<Accordion id="add-data-source" title="How do we add a new data source?">
+{/* TODO(__SE_NAME__): Remove this question if __PRODUCT_AREA__ does not include Data 360. */}
+
+Add a Data Stream → DLO → DMO mapping. See
+[Data Model → Data Cloud mapping](/docs/data-model#data-cloud-mapping) for the
+existing pattern. Plan an Identity Resolution rerun after the new DLO ingests.
+</Accordion>
+
+<Accordion id="cost" title="How much does this cost to run?">
+Depends on volume. See [Cost Model](/docs/cost-model) if that page exists in this
+site, or contact your AE for current Flex Credit pricing.
+</Accordion>
+
+</Accordions>
+
+## Security & compliance
+
+<Accordions type="single">
+
+<Accordion id="vendor-questionnaire" title="Our vendor questionnaire asks about X — where's the answer?">
+See [Security Questionnaire](/docs/security-questionnaire) if that page exists in
+this site, or [Security](/docs/security) for the underlying answers. For anything
+not covered, contact your account team.
+</Accordion>
+
+<Accordion id="data-stay" title="Where does our data live?">
+In your Salesforce instance. See
+[Security → Data residency & retention](/docs/security#data-residency--retention).
+__PRODUCT_AREA__ adds no third-party data stores unless explicitly listed in
+[Architecture](/docs/architecture).
+</Accordion>
+
+<Accordion id="pii" title="Can the agent see PII?">
+{/* TODO(__SE_NAME__): Remove if __PRODUCT_AREA__ does not include Agentforce. */}
+
+The agent has access to the records the running user can see, scoped further by
+the topic's classification description. Audit the topic descriptions in
+[Agents & Flows → Topics](/docs/agents-and-flows#topics) to confirm.
+</Accordion>
+
+</Accordions>
+
+{/* TODO(__SE_NAME__): Add customer-specific FAQs as the team asks them. The first
+    five questions you get asked twice belong on this page. */}

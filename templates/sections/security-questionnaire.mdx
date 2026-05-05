@@ -1,0 +1,173 @@
+---
+title: Security Questionnaire
+icon: ClipboardCheck
+description: Pre-answered SIG / CAIQ-style questionnaire responses for the __POC_NAME__
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Pre-answered responses to the standard vendor-security questionnaires
+(SIG Lite, CAIQ-Lite themes) for the **__POC_NAME__**. The customer's procurement
+or security team can copy these directly.
+
+<Callout type="warn" title="Read this before sending to a third party">
+These answers describe **the POC** as delivered. Production deployments may vary
+— for example, the customer may add SIEM, vault, or network controls beyond what
+the POC exercised. Confirm any answer that affects compliance posture before
+attesting to it externally.
+</Callout>
+
+<Callout type="info" title="Authoritative sources">
+Salesforce platform answers come from the [Salesforce Trust](https://trust.salesforce.com)
+site and the [Salesforce Compliance documentation](https://compliance.salesforce.com).
+This page summarizes only the parts relevant to the __POC_NAME__ workload.
+</Callout>
+
+## Identity & access management
+
+<Accordions type="single">
+
+<Accordion id="iam-mfa" title="Is MFA enforced?">
+Yes — Salesforce requires MFA for all direct UI logins by policy. See
+[Security → Authentication & MFA](/docs/security#authentication--mfa) for the
+configuration applied to this workload.
+</Accordion>
+
+<Accordion id="iam-sso" title="Does this support SSO / SAML / OIDC?">
+Yes. Salesforce supports SAML 2.0 and OIDC via Auth Providers. This POC inherits
+the customer's existing SSO configuration; no new identity provider was introduced.
+</Accordion>
+
+<Accordion id="iam-rbac" title="How is access controlled?">
+Salesforce profiles + permission sets + permission set groups. The POC ships
+two permsets — `__POC_SLUG___User` and `__POC_SLUG___Admin` — additive on top of
+the customer's existing profile. See [Security → Sharing & access](/docs/security#sharing--access).
+</Accordion>
+
+<Accordion id="iam-deprovisioning" title="How is access revoked when a user leaves?">
+Standard Salesforce deactivation — covered by the customer's existing JML process.
+The POC does not add a separate user store.
+</Accordion>
+
+</Accordions>
+
+## Data protection
+
+<Accordions type="single">
+
+<Accordion id="dp-encryption-rest" title="Is data encrypted at rest?">
+Yes. Salesforce encrypts all data at rest by default
+([Trust → Security → Encryption](https://trust.salesforce.com)). Shield Platform
+Encryption is available for field-level encryption if required by customer policy
+— not enabled by default in this POC.
+</Accordion>
+
+<Accordion id="dp-encryption-transit" title="Is data encrypted in transit?">
+Yes — TLS 1.2+ for all customer connections. Outbound integrations
+(__INTEGRATIONS__) use TLS via Named Credentials.
+</Accordion>
+
+<Accordion id="dp-residency" title="Where is data stored?">
+In the customer's Salesforce instance — region depends on the customer's org. See
+[Security → Data residency & retention](/docs/security#data-residency--retention).
+</Accordion>
+
+<Accordion id="dp-retention" title="How long is data retained?">
+Per the customer's retention policy applied to the relevant objects + Salesforce's
+default retention windows for transactional logs. Agentforce session transcript
+retention is configurable in Agent Studio.
+</Accordion>
+
+<Accordion id="dp-pii" title="Does the POC process PII?">
+{/* TODO(__SE_NAME__): Update based on the actual POC scope. The default below
+    assumes Account/Contact data is in scope. */}
+Potentially — the POC reads standard CRM objects (Account, Contact, Case) which
+typically contain PII. The agent's scope is constrained by the running user's
+record-level access; see [Security → Sharing & access](/docs/security#sharing--access).
+</Accordion>
+
+</Accordions>
+
+## Application security
+
+<Accordions type="single">
+
+<Accordion id="appsec-sdlc" title="What's the secure SDLC for this workload?">
+Source-controlled in `__REPO_URL__`. Changes go through pull request review and
+deploy via `sf project deploy validate` (validate-only) before
+`sf project deploy start`. Apex unit tests are required for code paths that
+touch data; Agentforce changes are validated with `sf agent test run`.
+</Accordion>
+
+<Accordion id="appsec-secrets" title="How are secrets managed?">
+Via Salesforce Named Credentials. No credentials in code, MDX, or repository
+history. See [Security → Secrets & credentials](/docs/security#secrets--credentials).
+</Accordion>
+
+<Accordion id="appsec-deps" title="What third-party dependencies does this introduce?">
+{/* TODO(__SE_NAME__): Update with the actual integration list. */}
+Only the systems listed under __INTEGRATIONS__. Each is wired through a Named
+Credential and inherits the customer's existing trust relationship with that system.
+</Accordion>
+
+<Accordion id="appsec-injection" title="How are injection attacks prevented?">
+Apex code uses bind variables for SOQL/SOSL; SOQL string concatenation is
+prohibited by code review. LLM prompts (if Agentforce is in scope) constrain the
+agent via topic scope + classification descriptions; user input is treated as
+data, not instructions.
+</Accordion>
+
+</Accordions>
+
+## Operational controls
+
+<Accordions type="single">
+
+<Accordion id="ops-logging" title="What is logged?">
+See [Observability → Signal sources](/docs/observability#signal-sources).
+</Accordion>
+
+<Accordion id="ops-monitoring" title="What is monitored, and by whom?">
+See [Observability → Review cadence](/docs/observability#review-cadence) and
+[Handoff → Ownership](/docs/handoff#ownership).
+</Accordion>
+
+<Accordion id="ops-incident" title="What is the incident response process?">
+See [Runbook](/docs/runbook) if that page exists in this site, or the customer's
+existing IR process. POC-specific contact: __SE_NAME__.
+</Accordion>
+
+<Accordion id="ops-bcp" title="What is the business continuity / DR plan?">
+Salesforce platform DR is documented at
+[Trust → Salesforce Reliability](https://trust.salesforce.com). For workload-specific
+DR (custom metadata, sample data, integration credentials), see
+[Security → Production gaps](/docs/security#production-gaps) — DR validation is
+typically a production-readiness item, not a POC deliverable.
+</Accordion>
+
+</Accordions>
+
+## Compliance attestations
+
+<Accordions type="single">
+
+<Accordion id="compliance-soc" title="Is this SOC 2 / ISO 27001 / HIPAA / FedRAMP compliant?">
+The Salesforce platform holds a wide set of attestations — see
+[compliance.salesforce.com](https://compliance.salesforce.com) for the current list.
+This POC inherits the platform's posture but **the POC itself has not been
+independently audited**. Treat this as a development workload until the customer's
+security team has reviewed it against [Security → Production gaps](/docs/security#production-gaps).
+</Accordion>
+
+<Accordion id="compliance-ccpa-gdpr" title="How does this support CCPA / GDPR rights requests?">
+Salesforce data subject requests (access, deletion, portability) are handled
+through standard Salesforce processes — covered by the customer's existing data
+processing agreement with Salesforce. The POC does not add a separate data store.
+</Accordion>
+
+</Accordions>
+
+{/* TODO(__SE_NAME__): If the customer sends a specific questionnaire (CAIQ, SIG Core,
+    HECVAT, etc.), add a new Accordions group above with the questions verbatim and
+    answers tailored to this POC. */}

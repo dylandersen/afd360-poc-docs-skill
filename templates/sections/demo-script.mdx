@@ -1,0 +1,145 @@
+---
+title: Demo Script
+icon: Presentation
+description: 5-minute and 20-minute demo scripts for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+Pre-built demo flows the **__CUSTOMER_NAME__** team can run for internal stakeholders
+without needing __SE_NAME__ in the room.
+
+<Callout type="info" title="Two demos, one workload">
+The 5-minute version is for sponsors and execs — show outcome, skip mechanics.
+The 20-minute version is for technical audiences — show outcome, then peel back
+the architecture.
+</Callout>
+
+## Pre-flight (run before any demo)
+
+<Steps>
+  <Step>
+    Confirm you're logged into the demo org as a user with the
+    `__POC_SLUG___User` permset assigned. Wrong user → wrong access → embarrassing
+    moment.
+  </Step>
+  <Step>
+    Reload the sample data if it's been mutated. See
+    [Runbook → Reset sample data](/docs/runbook#reset-sample-data) if that page
+    exists in this site, or rerun `sf data tree import --plan data/plan.json`.
+  </Step>
+  <Step>
+    Check that __INTEGRATIONS__ are healthy — a Named Credential 401 mid-demo is
+    not the moment to discover token expiry.
+  </Step>
+  <Step>
+    If __PRODUCT_AREA__ includes Agentforce: clear chat history so the audience
+    sees a clean transcript.
+  </Step>
+</Steps>
+
+## Demos
+
+<Tabs items={['5-minute (executive)', '20-minute (technical)']}>
+
+<Tab value="5-minute (executive)">
+
+### Goal
+
+Show that the workload **works end-to-end on real-looking data**. No architecture,
+no edge cases, no caveats.
+
+### Beats (60–90s each)
+
+| # | Beat | Action | Talking point |
+|---|------|--------|---------------|
+| 1 | **Set the problem** | Stay in slides | "__CUSTOMER_NAME__ today has _X_ — manual, slow, costly." |
+| 2 | **Show the user experience** | Open the app, walk happy path | "With __POC_NAME__, the user does _Y_ instead." |
+| 3 | **Show the outcome** | Highlight time saved / decision made | "_Z_ minutes → _Z'_ seconds. Multiplied across _N_ users, this is _$$_." |
+| 4 | **Show it's real** | Open the underlying record / log | "Not a mockup — these are records the team can audit today." |
+| 5 | **Land the ask** | Back to slides | "Approve _phase 2_ and we extend this to _the next team_." |
+
+### What you don't show
+
+- Configuration screens
+- Test data setup
+- Anything Agentforce / Flow / Apex unless someone asks
+
+</Tab>
+
+<Tab value="20-minute (technical)">
+
+### Goal
+
+Show the **same outcome** as the executive demo, then peel back enough of the
+mechanism that a customer architect can vouch for it internally.
+
+### Beats
+
+<Steps>
+  <Step>
+    **(0:00–3:00) Run the executive demo.** Same user-flow, same data, same
+    outcome. Don't editorialize about architecture yet.
+  </Step>
+  <Step>
+    **(3:00–7:00) Architecture overview.** Open
+    [Architecture](/docs/architecture). Talk through the system context diagram.
+    Pause on the design decisions — those are the credibility moments.
+  </Step>
+  <Step>
+    **(7:00–12:00) Look inside.** If __PRODUCT_AREA__ includes Agentforce:
+    open the agent in Agent Studio. Show topics, the action invoked, the
+    transcript. If __PRODUCT_AREA__ is platform: open the flow / apex class.
+    Don't read code; gesture at structure.
+  </Step>
+  <Step>
+    **(12:00–16:00) Show the safety net.** Open
+    [Observability → Review cadence](/docs/observability#review-cadence) and
+    [Security → Threat model](/docs/security#threat-model). The point here is
+    "this is operable on day one" — that's what wins technical buy-in.
+  </Step>
+  <Step>
+    **(16:00–18:00) Open questions / known gaps.** Be honest. Show
+    [Security → Production gaps](/docs/security#production-gaps). Customer
+    architects expect a POC to have gaps; what they don't tolerate is a POC that
+    pretends not to.
+  </Step>
+  <Step>
+    **(18:00–20:00) Land the ask.** What does Phase 2 look like? See
+    [Rollout Plan → Phases](/docs/rollout-plan#phases) if that page exists.
+  </Step>
+</Steps>
+
+</Tab>
+
+</Tabs>
+
+## Demo data scenarios
+
+| Scenario | Sample record(s) | Expected outcome | Talking point |
+|----------|------------------|------------------|---------------|
+| Happy path | _e.g. Account "Acme Inc."_ | _e.g. Agent answers within 5s_ | "This is the 80% case." |
+| Edge case | _e.g. Account with no contacts_ | _e.g. Agent asks clarifying question_ | "Notice — it didn't hallucinate; it asked." |
+| Escalation | _e.g. Out-of-scope question_ | _e.g. Agent hands off to human_ | "Guardrails working as designed." |
+
+{/* TODO(__SE_NAME__): Replace placeholders with the actual records loaded by
+    `data/plan.json` so anyone running the demo can find them in the org. */}
+
+## Recordings
+
+| Audience | Length | URL | Last updated |
+|----------|--------|-----|--------------|
+| Executive | 5 min | _Loom / Vidyard / SharePoint URL_ | __YEAR__ |
+| Technical | 20 min | _Loom / Vidyard / SharePoint URL_ | __YEAR__ |
+
+## Common questions
+
+- **"Can it do X?"** — see [FAQ](/docs/faq) if that page exists.
+- **"How was this built?"** — point at [Architecture](/docs/architecture) and
+  [Agents & Flows](/docs/agents-and-flows).
+- **"Is this secure?"** — point at [Security](/docs/security) and
+  [Security Questionnaire](/docs/security-questionnaire) if that page exists.
+- **"How much does it cost?"** — point at [Cost Model](/docs/cost-model) if that
+  page exists, otherwise loop in the account team.

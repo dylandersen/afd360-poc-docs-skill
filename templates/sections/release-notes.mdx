@@ -1,0 +1,78 @@
+---
+title: Release Notes
+icon: FileText
+description: Change log for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+What changed and when, in reverse chronological order. **Add a new entry every
+time you ship a change to a customer-facing environment.**
+
+<Callout type="info" title="Format">
+Each release uses Keep-a-Changelog categories: **Added**, **Changed**, **Fixed**,
+**Removed**, **Security**. Date in ISO format. Link to the PR or commit when
+possible.
+</Callout>
+
+## Unreleased
+
+_Entries here ship in the next release. Move them under a versioned heading when
+you cut the release._
+
+### Added
+- _What's new — feature, page, agent topic, action_
+
+### Changed
+- _What was reworked — behavior changes, threshold tweaks_
+
+### Fixed
+- _What broke + what was fixed (link the issue / ticket)_
+
+### Removed
+- _What was deleted (and why — for the audit trail)_
+
+### Security
+- _Anything affecting the threat model in [Security](/docs/security)_
+
+---
+
+## v0.1.0 — __YEAR__-__MM_DD__
+
+{/* TODO(__SE_NAME__): Replace __MM_DD__ with the actual month-day, e.g. 04-16. */}
+
+Initial **__POC_NAME__** delivery to **__CUSTOMER_NAME__** by __SE_NAME__.
+
+### Added
+
+- This documentation site
+- Salesforce metadata for __PRODUCT_AREA__ — see [Architecture](/docs/architecture)
+- Permission sets `__POC_SLUG___User`, `__POC_SLUG___Admin`
+- Sample data set (`data/plan.json`) for end-to-end demo
+- __INTEGRATIONS__ wired via Named Credentials
+
+### Known issues
+
+- _List any caveats the customer should know about on day one_
+- _Link them to entries in [Troubleshooting](/docs/troubleshooting) where applicable_
+
+### Production gaps
+
+See [Security → Production gaps](/docs/security#production-gaps) for the full list
+of items to close before promoting beyond evaluation.
+
+---
+
+## How to add a release entry
+
+<Callout type="warn" title="Don't skip this">
+A change log nobody updates is worse than no change log — it implies stability that
+isn't there.
+</Callout>
+
+1. Move the relevant items from **Unreleased** into a new dated section above v0.1.0.
+2. Use semver: bump **patch** for fixes, **minor** for backward-compatible additions,
+   **major** when you change behavior the customer integrated against.
+3. Tag the commit: `git tag v0.2.0 && git push --tags`.
+4. Announce per the [Rollout Plan → Communications plan](/docs/rollout-plan#communications-plan)
+   if the change is user-visible.

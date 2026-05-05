@@ -1,0 +1,143 @@
+---
+title: Runbook
+icon: BookMarked
+description: Standalone operational runbook for the __POC_NAME__
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+The on-call playbook for **__POC_NAME__**. When [Handoff](/docs/handoff) gets too big,
+operational procedures live here.
+
+<Callout type="warn" title="Use this page during an incident, not before">
+Read [Troubleshooting](/docs/troubleshooting) for diagnosis and
+[Observability](/docs/observability) for monitoring. This page is the **what to do**
+once you've identified the problem.
+</Callout>
+
+## Incident classification
+
+| Severity | Definition | Response time | Comms |
+|----------|-----------|---------------|-------|
+| **P1** | Workload completely down for all __PERSONAS__ | < 15 min | Sponsor + on-call |
+| **P2** | Major feature broken; workaround exists | < 1 hour | On-call + customer admin |
+| **P3** | Minor feature; affects < 10% of users | next business day | Backlog |
+| **P4** | Cosmetic or low-volume edge case | best effort | Backlog |
+
+## Common procedures
+
+### Re-deploy from clean state
+
+<Steps>
+  <Step>
+    Confirm you're targeting the right org: `sf org display --target-org __CUSTOMER_SLUG__-poc`
+  </Step>
+  <Step>
+    Pull latest: `git pull origin main`
+  </Step>
+  <Step>
+    Validate-only deploy first:
+    ```bash
+    sf project deploy validate --target-org __CUSTOMER_SLUG__-poc --test-level RunLocalTests
+    ```
+  </Step>
+  <Step>
+    Deploy:
+    ```bash
+    sf project deploy start --target-org __CUSTOMER_SLUG__-poc
+    ```
+  </Step>
+  <Step>
+    Re-run the smoke test from [Setup → Verify](/docs/setup#verify).
+  </Step>
+</Steps>
+
+### Reset sample data
+
+<Steps>
+  <Step>
+    Back up first if there's any non-synthetic data: `sf data export tree --query "..."`
+  </Step>
+  <Step>
+    Wipe + reload:
+    ```bash
+    sf data delete bulk --sobject Case --target-org __CUSTOMER_SLUG__-poc --where "..."
+    sf data tree import --plan data/plan.json --target-org __CUSTOMER_SLUG__-poc
+    ```
+  </Step>
+</Steps>
+
+### Re-authenticate Named Credentials
+
+<Steps>
+  <Step>
+    Setup → Named Credentials → click the failing credential → **Edit**
+  </Step>
+  <Step>
+    Re-enter or re-authenticate. If using OAuth, click **Authenticate** to refresh.
+  </Step>
+  <Step>
+    Verify with a small test callout (anonymous Apex or a manual flow run).
+  </Step>
+</Steps>
+
+### Rotate a credential
+
+<Steps>
+  <Step>
+    Generate the new credential in the source system (whatever owns __INTEGRATIONS__).
+  </Step>
+  <Step>
+    Update the Named Credential **before** revoking the old one.
+  </Step>
+  <Step>
+    Verify the new credential works (small callout).
+  </Step>
+  <Step>
+    Revoke the old credential at the source.
+  </Step>
+  <Step>
+    Note the rotation in [Release Notes](/docs/release-notes) under **Security**.
+  </Step>
+</Steps>
+
+### Disable the workload (kill switch)
+
+{/* TODO(__SE_NAME__): If __PRODUCT_AREA__ includes Agentforce, the kill switch is
+    "deactivate the agent". For Flows, it's "deactivate the flow". Pick the right
+    one for this POC and document it explicitly here. */}
+
+<Steps>
+  <Step>
+    **Agentforce**: Setup → Agents → select the agent → **Deactivate**.
+  </Step>
+  <Step>
+    **Flows**: Setup → Flows → find the flow → **Deactivate**.
+  </Step>
+  <Step>
+    **Integrations**: Setup → Named Credentials → toggle off, OR remove the assigned
+    permset that grants access to it.
+  </Step>
+  <Step>
+    Communicate per [Rollout Plan → Rollback plan](/docs/rollout-plan#rollback-plan).
+  </Step>
+</Steps>
+
+## Escalation
+
+| Tier | Who | When | Contact |
+|------|-----|------|---------|
+| Tier 1 | _customer support_ | First touch | _internal queue_ |
+| Tier 2 | _customer admin_ | Tier 1 stuck > 30 min | _email / Slack_ |
+| Tier 3 | __SE_NAME__ | P1 / P2 unresolved > 1h | _direct contact_ |
+| Tier 4 | Salesforce Support | Platform-level issue | [help.salesforce.com](https://help.salesforce.com) |
+
+## Post-incident
+
+After every P1/P2:
+
+- [ ] Write a brief postmortem (what, when, impact, root cause, fix, follow-ups)
+- [ ] File any follow-up work as tickets in `__REPO_URL__`
+- [ ] Add to [Troubleshooting](/docs/troubleshooting) so the next person finds it faster
+- [ ] Update this runbook if the response procedure changed

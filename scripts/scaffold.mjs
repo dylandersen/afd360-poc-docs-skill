@@ -1,11 +1,21 @@
 #!/usr/bin/env node
-// Scaffolds a tailored Fumadocs POC docs site from templates/fumadocs-poc/.
-// Copies files, replaces __PLACEHOLDER__ tokens, and writes to the target directory.
+// Scaffolds a Fumadocs POC docs site from templates/fumadocs-poc/ and copies
+// on-demand sections from templates/sections/.
 //
-// Usage:
-//   node scaffold.mjs --target /abs/path --customer "Acme" --poc "Service Agent POC" \
-//     [--customer-url https://www.acme.com] [--no-brand-extract] \
-//     [--brand-snapshot /abs/path/to/brand-snapshot.json] ...
+// Modes:
+//   1. Initial scaffold:
+//        node scaffold.mjs --target /abs/path --customer "Acme" --poc "POC" \
+//          --product-area "Agentforce" --personas "..." --integrations "..." \
+//          --deploy-target "Vercel" --se-name "..." [--repo-url "..."] \
+//          [--customer-url https://www.acme.com] [--no-brand-extract] \
+//          [--brand-snapshot /abs/path/to/brand-snapshot.json] \
+//          [--include-sections "security,faq,glossary"]
+//
+//   2. List sections (no target needed):
+//        node scaffold.mjs --list-sections [--json]
+//
+//   3. Add a section to an already-scaffolded site:
+//        node scaffold.mjs --add-section <slug> --target /abs/path [--force]
 //
 // Safe by default: refuses to write into a non-empty directory unless --force.
 
@@ -18,7 +28,9 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SKILL_ROOT = path.resolve(__dirname, "..");
 const TEMPLATE_DIR = path.join(SKILL_ROOT, "templates", "fumadocs-poc");
+const SECTIONS_DIR = path.join(SKILL_ROOT, "templates", "sections");
 const BRAND_EXTRACTOR = path.join(SKILL_ROOT, "scripts", "brand-extractor", "index.mjs");
+const META_FILE_NAME = ".poc-docs-meta.json";
 
 const BINARY_EXT = new Set([
   ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg",
@@ -61,6 +73,10 @@ function info(msg) {
   console.log(`[afd360-poc-docs-skill] ${msg}`);
 }
 
+function warn(msg) {
+  console.warn(`[afd360-poc-docs-skill] warn: ${msg}`);
+}
+
 function walk(dir, cb, rel = "") {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const abs = path.join(dir, entry.name);
@@ -81,12 +97,15 @@ function replaceAll(str, map) {
   return out;
 }
 
-// Emits a JavaScript/TypeScript value literal: string -> JSON.stringify, null -> "null".
-// Used for placeholders that need to render either `'value'` or `null` without quotes.
+// Emits a JS/TS value literal: string -> JSON.stringify, null/empty -> "null".
 function jsValue(v) {
   if (v === null || v === undefined || v === "") return "null";
   return JSON.stringify(v);
 }
+
+// ---------------------------------------------------------------------------
+// Brand extraction
+// ---------------------------------------------------------------------------
 
 function runBrandExtractor({ url: customerUrl, snapshotOut, assetsOut }) {
   info(`extracting brand from ${customerUrl}`);
@@ -98,7 +117,7 @@ function runBrandExtractor({ url: customerUrl, snapshotOut, assetsOut }) {
       "--out", snapshotOut,
       "--assets-out", assetsOut,
     ],
-    { stdio: ["ignore", "pipe", "inherit"], encoding: "utf8" }
+    { stdio: ["ignore", "pipe", "inherit"], encoding: "utf8" },
   );
   if (res.status === 0) {
     try {
@@ -108,7 +127,6 @@ function runBrandExtractor({ url: customerUrl, snapshotOut, assetsOut }) {
       return { ok: false, reason: "bad-extractor-stdout" };
     }
   }
-  // Extractor exits non-zero on robots-disallow (6) and unreachable (7) — both clean skips.
   if (res.status === 6) return { ok: false, reason: "robots-disallow" };
   if (res.status === 7) return { ok: false, reason: "unreachable" };
   return { ok: false, reason: `extractor-failed-${res.status}`, stdout: res.stdout };
@@ -123,8 +141,6 @@ function loadSnapshot(p) {
   }
 }
 
-// Copy files from an extractor assets dir into target/public/brand and return
-// a manifest of what landed where.
 function installBrandAssets(snapshotAssetsDir, target) {
   const publicBrandDir = path.join(target, "public", "brand");
   if (!fs.existsSync(snapshotAssetsDir)) return { installed: [], publicBrandDir };
@@ -183,9 +199,158 @@ function deriveThemeReplacements(snapshot) {
   };
 }
 
-function main() {
-  const args = parseArgs(process.argv);
+// ---------------------------------------------------------------------------
+// Section library
+// ---------------------------------------------------------------------------
 
+function readSectionMeta(absPath) {
+  const raw = fs.readFileSync(absPath, "utf8");
+  const m = raw.match(/^---\n([\s\S]*?)\n---/);
+  if (!m) return { title: "", description: "", icon: "" };
+  const fm = m[1];
+  const grab = (key) => {
+    const r = new RegExp(`^${key}:\\s*(.+)$`, "m").exec(fm);
+    return r ? r[1].trim().replace(/^['"]|['"]$/g, "") : "";
+  };
+  return { title: grab("title"), description: grab("description"), icon: grab("icon") };
+}
+
+function listSections() {
+  if (!fs.existsSync(SECTIONS_DIR)) return [];
+  return fs
+    .readdirSync(SECTIONS_DIR, { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith(".mdx"))
+    .map((e) => {
+      const slug = e.name.replace(/\.mdx$/, "");
+      const meta = readSectionMeta(path.join(SECTIONS_DIR, e.name));
+      return { slug, ...meta };
+    })
+    .sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
+function readTargetMeta(target) {
+  const p = path.join(target, META_FILE_NAME);
+  if (!fs.existsSync(p)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(p, "utf8"));
+  } catch (e) {
+    die(`failed to parse ${p}: ${e.message}`);
+  }
+}
+
+function writeTargetMeta(target, meta) {
+  const p = path.join(target, META_FILE_NAME);
+  fs.writeFileSync(p, JSON.stringify(meta, null, 2) + "\n", "utf8");
+}
+
+// Insert a slug into content/docs/meta.json's `pages` array. Inserts before
+// "troubleshooting" if present so Troubleshooting always stays last.
+function addToDocsMeta(target, slug) {
+  const metaPath = path.join(target, "content", "docs", "meta.json");
+  if (!fs.existsSync(metaPath)) {
+    die(`docs meta.json missing: ${metaPath}`);
+  }
+  const data = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+  data.pages = Array.isArray(data.pages) ? data.pages : [];
+  if (data.pages.includes(slug)) return false;
+
+  const idx = data.pages.indexOf("troubleshooting");
+  if (idx >= 0) {
+    data.pages.splice(idx, 0, slug);
+  } else {
+    data.pages.push(slug);
+  }
+  fs.writeFileSync(metaPath, JSON.stringify(data, null, 2) + "\n", "utf8");
+  return true;
+}
+
+function copySection(slug, target, replacements, opts) {
+  const force = Boolean(opts && opts.force);
+  const src = path.join(SECTIONS_DIR, `${slug}.mdx`);
+  if (!fs.existsSync(src)) {
+    const available = listSections().map((s) => s.slug).join(", ") || "(none)";
+    die(`unknown section "${slug}". available: ${available}`);
+  }
+  const dest = path.join(target, "content", "docs", `${slug}.mdx`);
+  if (fs.existsSync(dest) && !force) {
+    warn(`section already exists at ${dest} — pass --force to overwrite. skipping.`);
+    return { written: false, addedToMeta: false };
+  }
+  const raw = fs.readFileSync(src, "utf8");
+  const replaced = replaceAll(raw, replacements);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, replaced, "utf8");
+  const addedToMeta = addToDocsMeta(target, slug);
+  return { written: true, addedToMeta };
+}
+
+function buildPocReplacements(meta) {
+  return {
+    "__CUSTOMER_NAME__": meta.customer,
+    "__CUSTOMER_SLUG__": meta.customerSlug,
+    "__POC_NAME__": meta.poc,
+    "__POC_SLUG__": meta.pocSlug,
+    "__PRODUCT_AREA__": meta.productArea,
+    "__PERSONAS__": meta.personas,
+    "__INTEGRATIONS__": meta.integrations,
+    "__DEPLOY_TARGET__": meta.deployTarget,
+    "__REPO_URL__": meta.repoUrl,
+    "__SE_NAME__": meta.seName,
+    "__YEAR__": meta.year,
+    "__CUSTOMER_URL__": meta.customerUrl || "",
+    "__CUSTOMER_URL_JS__": jsValue(meta.customerUrl || null),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// CLI modes
+// ---------------------------------------------------------------------------
+
+function runListSections(args) {
+  const sections = listSections();
+  if (args.json) {
+    console.log(JSON.stringify(sections, null, 2));
+    return;
+  }
+  if (sections.length === 0) {
+    info("no sections available — templates/sections/ is empty");
+    return;
+  }
+  info(`available sections (${sections.length}):`);
+  const slugWidth = Math.max(...sections.map((s) => s.slug.length));
+  for (const s of sections) {
+    const pad = " ".repeat(Math.max(0, slugWidth - s.slug.length));
+    console.log(`  ${s.slug}${pad}  ${s.title}${s.description ? "  —  " + s.description : ""}`);
+  }
+}
+
+function runAddSection(args) {
+  const slug = typeof args["add-section"] === "string" ? args["add-section"] : null;
+  if (!slug) die("--add-section requires a slug, e.g. --add-section security");
+  if (!args.target) die("--add-section requires --target <abs path to scaffolded site>");
+  const target = path.resolve(args.target);
+  if (!fs.existsSync(target)) die(`target does not exist: ${target}`);
+
+  const meta = readTargetMeta(target);
+  if (!meta) {
+    die(`${target} does not look like a scaffolded site (missing ${META_FILE_NAME}).`);
+  }
+
+  const replacements = buildPocReplacements(meta);
+  const result = copySection(slug, target, replacements, { force: Boolean(args.force) });
+
+  if (result.written) {
+    info(`added section "${slug}" to ${target}/content/docs/${slug}.mdx`);
+  }
+  if (result.addedToMeta) {
+    info(`added "${slug}" to content/docs/meta.json`);
+  } else if (result.written) {
+    info(`"${slug}" already in content/docs/meta.json — left as-is`);
+  }
+  console.log("\n" + JSON.stringify({ slug, target, ...result }, null, 2));
+}
+
+function runInitialScaffold(args) {
   const required = [
     "target", "customer", "poc",
     "product-area", "personas", "integrations",
@@ -226,7 +391,7 @@ function main() {
     fs.mkdirSync(target, { recursive: true });
   }
 
-  // 1. Resolve brand snapshot: user-provided path wins; otherwise run extractor if URL given.
+  // Resolve brand snapshot.
   let brandSnapshot = null;
   let brandReview = null;
   let brandAssetsTmpDir = null;
@@ -237,7 +402,6 @@ function main() {
     brandSnapshot = loadSnapshot(path.resolve(existingSnapshotFlag));
     if (brandSnapshot) {
       info(`using existing brand snapshot: ${existingSnapshotFlag}`);
-      // Copy snapshot into target/data/ and assets from sibling brand-assets dir if present.
       fs.mkdirSync(targetDataDir, { recursive: true });
       fs.writeFileSync(targetSnapshotPath, JSON.stringify(brandSnapshot, null, 2) + "\n");
       const siblingAssets = path.join(path.dirname(path.resolve(existingSnapshotFlag)), "brand-assets");
@@ -262,33 +426,22 @@ function main() {
     info(`--no-brand-extract passed; skipping brand extraction`);
   }
 
-  // 2. Install brand assets into public/brand/ so they resolve in the Next.js app.
   if (brandAssetsTmpDir) {
     const { installed, publicBrandDir } = installBrandAssets(brandAssetsTmpDir, target);
     if (installed.length) info(`installed ${installed.length} brand asset(s) → ${publicBrandDir}`);
-    // If the tmp assets dir is inside the target (extractor default), remove it
-    // so we don't ship duplicates of public/brand/.
     if (brandAssetsTmpDir.startsWith(target) && fs.existsSync(brandAssetsTmpDir)) {
       fs.rmSync(brandAssetsTmpDir, { recursive: true, force: true });
     }
   }
 
+  const intake = {
+    customer, customerSlug, poc, pocSlug, productArea,
+    personas, integrations, deployTarget, repoUrl, seName,
+    customerUrl, year,
+  };
   const themeReplacements = deriveThemeReplacements(brandSnapshot);
-
   const replacements = {
-    "__CUSTOMER_NAME__": customer,
-    "__CUSTOMER_SLUG__": customerSlug,
-    "__POC_NAME__": poc,
-    "__POC_SLUG__": pocSlug,
-    "__PRODUCT_AREA__": productArea,
-    "__PERSONAS__": personas,
-    "__INTEGRATIONS__": integrations,
-    "__DEPLOY_TARGET__": deployTarget,
-    "__REPO_URL__": repoUrl,
-    "__SE_NAME__": seName,
-    "__YEAR__": year,
-    "__CUSTOMER_URL__": customerUrl || "",
-    "__CUSTOMER_URL_JS__": jsValue(customerUrl || null),
+    ...buildPocReplacements(intake),
     ...themeReplacements,
   };
 
@@ -311,14 +464,32 @@ function main() {
     fileCount++;
   });
 
-  // gitignore ships as _gitignore in the template so pnpm/npm don't ignore it in the package.
   const underscoreGitignore = path.join(target, "_gitignore");
   const realGitignore = path.join(target, ".gitignore");
   if (fs.existsSync(underscoreGitignore)) {
     fs.renameSync(underscoreGitignore, realGitignore);
   }
 
+  // Persist intake metadata so /update-docs add-section works without re-prompting.
+  writeTargetMeta(target, intake);
+
   info(`wrote ${fileCount} files`);
+
+  // Optional: include any sections requested at scaffold time.
+  const includeRaw = typeof args["include-sections"] === "string"
+    ? args["include-sections"]
+    : "";
+  const includeSlugs = includeRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const sectionResults = [];
+  for (const slug of includeSlugs) {
+    const r = copySection(slug, target, replacements, { force });
+    sectionResults.push({ slug, ...r });
+    if (r.written) info(`included section "${slug}"`);
+  }
+
   info(`done`);
 
   const summary = {
@@ -342,12 +513,13 @@ function main() {
           snapshotPath: targetSnapshotPath,
         }
       : brandSnapshot
-      ? {
-          extractedFrom: brandSnapshot.extractedFrom || null,
-          snapshotPath: targetSnapshotPath,
-          note: "loaded-from-existing-snapshot",
-        }
-      : null,
+        ? {
+            extractedFrom: brandSnapshot.extractedFrom || null,
+            snapshotPath: targetSnapshotPath,
+            note: "loaded-from-existing-snapshot",
+          }
+        : null,
+    includedSections: sectionResults,
     nextSteps: [
       `cd "${target}"`,
       `pnpm install   # or npm install`,
@@ -360,6 +532,22 @@ function main() {
     ],
   };
   console.log("\n" + JSON.stringify(summary, null, 2));
+}
+
+function main() {
+  const args = parseArgs(process.argv);
+
+  if (args["list-sections"]) {
+    runListSections(args);
+    return;
+  }
+
+  if (args["add-section"]) {
+    runAddSection(args);
+    return;
+  }
+
+  runInitialScaffold(args);
 }
 
 main();

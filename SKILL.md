@@ -32,7 +32,7 @@ Triggered by:
 
 ## Workflow
 
-Follow these phases **in order**. Phase 0 is non-negotiable — it catches 90% of "why didn't it work" issues before the SE has invested any time.
+Follow these phases **in order**. Phase 0 is non-negotiable — it catches 90% of "why didn't it work" issues before the SE has invested any time. Phase 1.5 is new: between intake and scaffold, offer the optional section library and let the SE skip anything they don't have answers for yet.
 
 ### Phase 0 — Preflight (always run first)
 
@@ -74,6 +74,26 @@ Ask for the 4 required fields one at a time. **Do not ask optional fields unless
 Derive slugs from names: lowercase, hyphenate, strip punctuation. Confirm all values back in one compact summary before scaffolding.
 
 Speak directly to the SE in second person. Keep the tone conversational.
+
+### Phase 1.5 — Optional sections (skippable)
+
+Between intake and scaffold, offer the optional section library:
+
+```bash
+node "<skill-dir>/scripts/scaffold.mjs" --list-sections
+```
+
+Present the slugs as a multi-select with one-line descriptions and ask:
+
+> "Want any of these seeded now? Skip anything you don't have answers for yet — `/update-docs add-section <slug>` adds them later."
+
+**Default behavior is to skip.** If the SE is unsure or short on time, do not push — these pages are easy to add later via `/update-docs`. Common picks for handoff: `security`, `faq`, `glossary`. Common picks for stakeholder demos: `demo-script`. Anything cost-related: `cost-model`.
+
+If the SE picks any sections, pass them comma-separated to scaffold:
+
+```bash
+node "<skill-dir>/scripts/scaffold.mjs" --target ... --include-sections "security,faq,glossary"
+```
 
 #### Intake anti-duplication rules
 
@@ -180,15 +200,33 @@ The section library lives at `templates/fumadocs-poc/content/docs/_sections/`. `
 
 | Slug | Purpose |
 |------|---------|
-| `security` | Threat model, sharing rules, secrets handling, perm audit |
-| `observability` | Logging, monitoring, alerting, agent transcript review |
-| `rollout-plan` | Phased rollout, comms plan, training, success metrics |
-| `faq` | Customer-facing frequently asked questions |
-| `glossary` | Acronyms and terms specific to this POC |
-| `release-notes` | Ongoing change log post-handoff |
-| `runbook` | Standalone operational runbook (when `handoff.mdx` gets too long) |
+| `security` | Threat model, sharing rules, secrets, perm audit, MFA, residency |
+| `security-questionnaire` | Pre-answered SIG-Lite / CAIQ-Lite vendor-questionnaire responses |
+| `observability` | Signals, review cadence, thresholds, SLO snapshot |
+| `rollout-plan` | Phased rollout, comms, training, success metrics, rollback |
+| `cost-model` | Flex Credit / volume-based cost projections + levers |
+| `demo-script` | 5-min and 20-min demo scripts the customer can run themselves |
+| `faq` | Customer-facing FAQ seeded with the questions admins ask in week 2 |
+| `glossary` | Salesforce + product + customer-specific acronyms and terms |
+| `runbook` | Standalone operational runbook (when `handoff.mdx` grows past ~300 lines) |
+| `release-notes` | Keep-a-Changelog format with v0.1.0 stub and Unreleased bucket |
 
-To discover what's actually on disk at runtime, run `node scripts/scaffold.mjs --list-sections`. The table above is authoritative for the skill's prose; the script is authoritative for the filesystem. If they disagree, update whichever is wrong.
+The library lives at `templates/sections/` (skill-level — **not** inside `templates/fumadocs-poc/` so the scaffolder doesn't accidentally render it as live Fumadocs pages). To discover what's actually on disk at runtime:
+
+```bash
+node scripts/scaffold.mjs --list-sections        # human format
+node scripts/scaffold.mjs --list-sections --json # machine format
+```
+
+The table above is authoritative for the skill's prose; the script is authoritative for the filesystem. If they disagree, update whichever is wrong.
+
+**How `add-section` works:**
+
+```bash
+node scripts/scaffold.mjs --add-section security --target /abs/path/to/site
+```
+
+The script reads intake values from `<target>/.poc-docs-meta.json` (written during initial scaffold), copies `templates/sections/<slug>.mdx` to `<target>/content/docs/<slug>.mdx` with placeholders substituted, and inserts `<slug>` into `meta.json`'s `pages` array **before** `troubleshooting` so Troubleshooting always stays last in the sidebar. Re-running on an already-added slug is a no-op unless `--force` is passed (then it overwrites the page contents but leaves `meta.json` as-is).
 
 ## Placeholder contract
 
