@@ -20,7 +20,7 @@ A Next.js + Fumadocs site at a directory the SE chooses, with:
 
 The template tracks **Fumadocs 16+** and requires **Node 22+**. The template's `package.json` is the source of truth for versions — do not hardcode versions anywhere in this skill's prose.
 
-> **Status:** `scripts/scaffold.mjs`, `scripts/brand-extractor/`, and `templates/fumadocs-poc/` are implemented and passing `next build`. `scripts/preflight.mjs` and `scripts/verify-placeholders.mjs` are specified here but not yet on disk — until they land, skip those phases and degrade to a bare `node --version` check + manual inspection. Build order: template → scaffold.mjs → brand-extractor → verify-placeholders.mjs → preflight.mjs.
+> **Status:** All scripts are implemented and the template passes `next build`. If `scripts/preflight.mjs` or `scripts/verify-placeholders.mjs` are ever missing on disk, **degrade gracefully** — for preflight, fall back to a bare `node --version` check (require ≥ 22) and confirm at least one of `pnpm`/`npm`/`bun` is on PATH; for verify-placeholders, do a `grep -rE '__[A-Z][A-Z0-9_]*__'` over the target. Do not bail or refuse intake — the SE shouldn't pay for a tooling gap.
 
 ## Invocation
 
@@ -36,20 +36,18 @@ Follow these phases **in order**. Phase 0 is non-negotiable — it catches 90% o
 
 ### Phase 0 — Preflight (always run first)
 
-Run `scripts/preflight.mjs`. It checks, in order:
+Run `node "<skill-dir>/scripts/preflight.mjs"`. It checks, in order:
 
-1. Node version ≥ 22 (Fumadocs 16 minimum)
-2. A package manager is available (`pnpm` preferred, `npm` fallback, `bun` acceptable)
-3. `git` is on PATH (needed for Phase 4's `git init`)
-4. Network reachability to the npm registry (`https://registry.npmjs.org`)
+1. Node version ≥ 22 (Fumadocs 16 minimum) — **hard requirement**
+2. A package manager is available (`pnpm` preferred, `npm` fallback, `bun` acceptable) — **hard requirement**
+3. `git` is on PATH (needed for Phase 4's `git init`) — **soft warning, do not block**
+4. Network reachability to the npm registry (`https://registry.npmjs.org`) — **soft warning, do not block**
 
-If anything fails, **stop and print the exact install command** for the SE's platform. Do not proceed to intake. Example output:
+The script exits **0** on hard-requirement pass (with or without soft warnings) and **1** on hard-requirement fail. If it exits 1, **stop and print the script's `fix:` block** for the SE — it includes platform-specific install commands. Soft warnings should be surfaced but **do not stop intake** — the SE's network may flake or git may genuinely not be needed yet.
 
-```
-✗ Node 20.11.0 detected. Fumadocs 16 requires Node 22+.
-  Install via: brew install node@22   (macOS)
-               nvm install 22          (any platform with nvm)
-```
+If `scripts/preflight.mjs` is missing for any reason (corrupted install, partial sync), **fall back to a manual check**: confirm `node --version` returns ≥ v22 and that `pnpm --version`, `npm --version`, or `bun --version` succeeds. **Never** stop intake just because the helper script is absent — the SE has not done anything wrong.
+
+Resolve `<skill-dir>` from the absolute path of this `SKILL.md` file. Typical locations: `~/.cursor/skills/afd360-poc-docs-skill/`, `~/.claude/skills/afd360-poc-docs-skill/`, or `~/.agents/skills/afd360-poc-docs-skill/`.
 
 ### Phase 1 — Intake
 
