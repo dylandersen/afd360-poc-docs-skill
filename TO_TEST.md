@@ -357,7 +357,66 @@ pnpm build
 - generated CSS variables are valid
 - theme overrides remain type-safe
 
-## 10. Regression checklist
+## 10. Sidebar icon regression test
+
+This catches the bug where Fumadocs renders icon names like `House`, `Network`,
+or `Sparkles` as text instead of rendering Lucide SVG icons.
+
+### Commands
+
+```bash
+rm -rf /tmp/afd360-icon-regression
+node scripts/scaffold.mjs \
+  --target /tmp/afd360-icon-regression \
+  --customer "Icon Corp" \
+  --poc "Icon POC" \
+  --product-area "Agentforce" \
+  --personas "Admin" \
+  --integrations "None" \
+  --deploy-target "Vercel" \
+  --se-name "Tester"
+
+cd /tmp/afd360-icon-regression
+npm install
+npm run build
+```
+
+### Inspect the rendered HTML
+
+```bash
+rg -o '>House<|>Home<|>Network<|>Settings<|>Database<|>Bot<|>Handshake<|>LifeBuoy<|>Sparkles<' \
+  .next/server/app \
+  -g '*.html'
+
+rg -o 'lucide-(house|home|network|settings|database|bot|handshake|life-buoy|sparkles)' \
+  .next/server/app/docs.html \
+  | sort -u
+```
+
+Expected:
+
+- The first command returns **no matches**.
+- The second command returns Lucide icon classes such as:
+  - `lucide-house`
+  - `lucide-network`
+  - `lucide-settings`
+  - `lucide-database`
+  - `lucide-bot`
+  - `lucide-handshake`
+  - `lucide-life-buoy`
+
+If raw words show up, check `templates/fumadocs-poc/lib/source.ts`. It must use:
+
+```ts
+import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
+
+export const source = loader({
+  // ...
+  plugins: [lucideIconsPlugin()],
+});
+```
+
+## 11. Regression checklist
 
 Use this quick list after any code change:
 
@@ -368,12 +427,13 @@ Use this quick list after any code change:
 - verify `site.config.ts` has the expected theme values
 - verify `public/brand/` contains downloaded files
 - verify `data/brand-snapshot.json` is written
+- verify sidebar icons render as Lucide SVGs, not text labels
 - run `pnpm build`
 - open the site and confirm the brand shows up
 - change `site.config.ts` manually and confirm overrides win
 - re-run the extractor and confirm the overrides persist
 
-## 11. What can break and what that means
+## 12. What can break and what that means
 
 If a test fails, this is the usual diagnosis:
 
@@ -383,8 +443,9 @@ If a test fails, this is the usual diagnosis:
 - **Theme does not show in the browser**: CSS vars are not mapped correctly, or the resolved theme is not being injected.
 - **Manual overrides are ignored**: precedence in `resolve-theme.ts` is wrong.
 - **`pnpm build` passes but the UI looks generic**: the extractor returned `null` values, or the customer site did not expose enough signals.
+- **Sidebar shows icon words like `Sparkles` instead of icons**: the Fumadocs source loader is missing `lucideIconsPlugin()`.
 
-## 12. Suggested order when debugging
+## 13. Suggested order when debugging
 
 If something goes wrong, debug in this order:
 
